@@ -1,0 +1,46 @@
+{
+  "task": "verb",
+  "count": 64,
+  "results": {
+    "entity": {
+      "n": 13,
+      "accuracy": 0.1538461595773697,
+      "balanced_accuracy": 0.04761904903820583
+    },
+    "dynamic": {
+      "n": 13,
+      "accuracy": 0.07692307978868484,
+      "balanced_accuracy": 0.023809524519102915
+    },
+    "relation": {
+      "n": 13,
+      "accuracy": 0.07692307978868484,
+      "balanced_accuracy": 0.023809524519102915
+    },
+    "full": {
+      "n": 13,
+      "accuracy": 0.1538461595773697,
+      "balanced_accuracy": 0.04761904903820583
+    },
+    "entity+dynamic": {
+      "n": 13,
+      "accuracy": 0.1538461595773697,
+      "balanced_accuracy": 0.04761904903820583
+    },
+    "entity+relation": {
+      "n": 13,
+      "accuracy": 0.07692307978868484,
+      "balanced_accuracy": 0.14285714285714285
+    },
+    "dynamic+relation": {
+      "n": 13,
+      "accuracy": 0.07692307978868484,
+      "balanced_accuracy": 0.023809524519102915
+    },
+    "entity+dynamic+relation": {
+      "n": 13,
+      "accuracy": 0.07692307978868484,
+      "balanced_accuracy": 0.023809524519102915
+    }
+  }
+}

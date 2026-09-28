@@ -1,0 +1,47 @@
+launch: {}
+tasks:
+  full_future_ocp:
+    launch:
+      module: src.shared.evaluate.physionpp.eval_full_future_ocp
+      output_scope: evaluation
+      log_name: eval.log
+      pid_name: eval.pid
+      label: OCP evaluation
+      mirror_data_to_workspace: true
+      args:
+      - --eval-config
+      - '{config}'
+      - --config
+      - '{workspace_run_dir}/config.yaml'
+      - --checkpoint
+      - '{checkpoint}'
+      - --output-dir
+      - '{data_output_dir}'
+      training_config: src/experiments/vjepa2_clevrer_naive_world_model_seed239/configs/physionpp/physion-vith-16to16-8gpu.yaml
+      checkpoint: best.pt
+    experiment:
+      evaluation:
+        world_model_adapter: src.experiments.vjepa2_clevrer_naive_world_model_seed239.world_model_adapter
+        device: cuda:0
+        seed: 239
+        batch_size: 1
+        num_workers: 4
+        max_readout_videos: null
+        max_test_videos: null
+        readout_epochs: 300
+        readout_lr: 0.0003
+        readout_weight_decay: 0.001
+        probe_protocol: unified
+        probe_validation_fraction: 0.25
+        probe_variants:
+        - full
+        - current
+        - rollout_mean
+        - last_chunk
+        - delta
+        readout_device: same
+        progress_every_batches: 10
+        readout_log_every_epochs: 50
+        fixed_threshold: null
+        humans_dir: /data/ABDUCTIVE-WORLD/physion_v2/extracted/humans
+        human_hard_threshold: 0.5

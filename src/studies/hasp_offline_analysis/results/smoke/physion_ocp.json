@@ -1,0 +1,54 @@
+{
+  "task": "ocp",
+  "count": 64,
+  "results": {
+    "entity": {
+      "n": 13,
+      "accuracy": 0.4615384638309479,
+      "balanced_accuracy": 0.4880952313542366,
+      "auroc": 0.5714285969734192
+    },
+    "dynamic": {
+      "n": 13,
+      "accuracy": 0.4615384638309479,
+      "balanced_accuracy": 0.5,
+      "auroc": 0.5952380895614624
+    },
+    "relation": {
+      "n": 13,
+      "accuracy": 0.3076923191547394,
+      "balanced_accuracy": 0.3214285746216774,
+      "auroc": 0.2142857164144516
+    },
+    "full": {
+      "n": 13,
+      "accuracy": 0.38461539149284363,
+      "balanced_accuracy": 0.4047619178891182,
+      "auroc": 0.4285714328289032
+    },
+    "entity+dynamic": {
+      "n": 13,
+      "accuracy": 0.5384615659713745,
+      "balanced_accuracy": 0.559523805975914,
+      "auroc": 0.6190476417541504
+    },
+    "entity+relation": {
+      "n": 13,
+      "accuracy": 0.5384615659713745,
+      "balanced_accuracy": 0.559523805975914,
+      "auroc": 0.523809552192688
+    },
+    "dynamic+relation": {
+      "n": 13,
+      "accuracy": 0.4615384638309479,
+      "balanced_accuracy": 0.5,
+      "auroc": 0.3095238208770752
+    },
+    "entity+dynamic+relation": {
+      "n": 13,
+      "accuracy": 0.38461539149284363,
+      "balanced_accuracy": 0.4047619178891182,
+      "auroc": 0.4285714328289032
+    }
+  }
+}

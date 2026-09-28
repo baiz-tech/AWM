@@ -1,0 +1,20 @@
+\begin{table*}[t]
+\centering
+\caption{Input-evidence interventions with frozen readouts.  Higher AUROC and lower
+MAE are better.}
+\label{tab:physion-input-intervention}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\textwidth}{@{}lYYYYY@{}}
+\toprule
+ & \multicolumn{2}{c}{\textbf{Factor readout}} & \multicolumn{2}{c}{\textbf{Interaction}} & \textbf{Task} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+\textbf{Condition} & \makecell{Entity extent\\MAE} & \makecell{Dynamic speed\\MAE} & \makecell{Contact\\AUROC} & \makecell{TTC\\MAE} & \makecell{OCP\\AUROC} \\
+\midrule
+Cached baseline & 0.0292 & 0.0670 & 0.9837 & 0.1262 & 0.7907 \\
+50\% object-guided mask & 0.0328 & 0.0739 & 0.9808 & 0.1307 & 0.7150 \\
+50\% random mask & 0.0304 & 0.0692 & 0.9837 & 0.1278 & 0.7757 \\
+Temporal static & 0.0580 & 0.1120 & 0.9485 & 0.2665 & 0.5646 \\
+\bottomrule
+\end{tabularx}
+\end{table*}

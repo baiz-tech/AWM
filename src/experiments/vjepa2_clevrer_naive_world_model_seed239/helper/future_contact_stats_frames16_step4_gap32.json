@@ -1,0 +1,237 @@
+{
+  "label": "target_contacting_zone",
+  "range_semantics": "half_open_contiguous_raw_frames",
+  "configuration": {
+    "root": "/data/ABDUCTIVE-WORLD/physion_v2/extracted",
+    "splits": [
+      "data_v1",
+      "readout_data_v1",
+      "testdata_v1"
+    ],
+    "video_glob": "**/*_img.mp4",
+    "clip_frames": 16,
+    "future_frame_step": 4,
+    "clip_gap": 32,
+    "raw_future_range_length": 64,
+    "range_start_formula": "P + clip_gap",
+    "range_end_exclusive_formula": "P + clip_gap + clip_frames * future_frame_step"
+  },
+  "splits": [
+    {
+      "split": "data_v1",
+      "discovered_videos": 8000,
+      "total_samples": 7986,
+      "positive_samples": 2274,
+      "negative_samples": 5712,
+      "positive_rate": 0.284748309541698,
+      "negative_rate": 0.7152516904583021,
+      "invalid_samples": 14,
+      "status_counts": {
+        "valid": 7986,
+        "incomplete_range": 14
+      },
+      "positive_first_contact_offset_stats": {
+        "min": 0.0,
+        "p25": 5.0,
+        "median": 28.0,
+        "p75": 43.0,
+        "max": 63.0,
+        "mean": 25.949868073878626
+      },
+      "invalid_examples": [
+        {
+          "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=cube/0000_img.mp4",
+          "status": "incomplete_range",
+          "positive": false,
+          "first_contact_frame": null,
+          "first_contact_offset": null,
+          "detail": "required=[137,201) missing_count=5 first_missing=196"
+        },
+        {
+          "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=cube/0011_img.mp4",
+          "status": "incomplete_range",
+          "positive": false,
+          "first_contact_frame": null,
+          "first_contact_offset": null,
+          "detail": "required=[137,201) missing_count=10 first_missing=191"
+        },
+        {
+          "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=cube/0025_img.mp4",
+          "status": "incomplete_range",
+          "positive": false,
+          "first_contact_frame": null,
+          "first_contact_offset": null,
+          "detail": "required=[137,201) missing_count=8 first_missing=193"
+        },
+        {
+          "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cube/0039_img.mp4",
+          "status": "incomplete_range",
+          "positive": false,
+          "first_contact_frame": null,
+          "first_contact_offset": null,
+          "detail": "required=[137,201) missing_count=7 first_missing=194"
+        },
+        {
+          "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cylinder/0012_img.mp4",
+          "status": "incomplete_range",
+          "positive": false,
+          "first_contact_frame": null,
+          "first_contact_offset": null,
+          "detail": "required=[137,201) missing_count=8 first_missing=193"
+        },
+        {
+          "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=pyramid/0019_img.mp4",
+          "status": "incomplete_range",
+          "positive": false,
+          "first_contact_frame": null,
+          "first_contact_offset": null,
+          "detail": "required=[137,201) missing_count=6 first_missing=195"
+        },
+        {
+          "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=pyramid/0025_img.mp4",
+          "status": "incomplete_range",
+          "positive": false,
+          "first_contact_frame": null,
+          "first_contact_offset": null,
+          "detail": "required=[137,201) missing_count=14 first_missing=187"
+        },
+        {
+          "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=pyramid/0027_img.mp4",
+          "status": "incomplete_range",
+          "positive": false,
+          "first_contact_frame": null,
+          "first_contact_offset": null,
+          "detail": "required=[137,201) missing_count=2 first_missing=199"
+        },
+        {
+          "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=pyramid/0033_img.mp4",
+          "status": "incomplete_range",
+          "positive": false,
+          "first_contact_frame": null,
+          "first_contact_offset": null,
+          "detail": "required=[137,201) missing_count=11 first_missing=190"
+        },
+        {
+          "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=pyramid/0047_img.mp4",
+          "status": "incomplete_range",
+          "positive": false,
+          "first_contact_frame": null,
+          "first_contact_offset": null,
+          "detail": "required=[137,201) missing_count=2 first_missing=199"
+        },
+        {
+          "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=pyramid/0102_img.mp4",
+          "status": "incomplete_range",
+          "positive": false,
+          "first_contact_frame": null,
+          "first_contact_offset": null,
+          "detail": "required=[137,201) missing_count=2 first_missing=199"
+        },
+        {
+          "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=pyramid/0107_img.mp4",
+          "status": "incomplete_range",
+          "positive": false,
+          "first_contact_frame": null,
+          "first_contact_offset": null,
+          "detail": "required=[137,201) missing_count=3 first_missing=198"
+        },
+        {
+          "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=pyramid/0158_img.mp4",
+          "status": "incomplete_range",
+          "positive": false,
+          "first_contact_frame": null,
+          "first_contact_offset": null,
+          "detail": "required=[137,201) missing_count=12 first_missing=189"
+        },
+        {
+          "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=pyramid/0170_img.mp4",
+          "status": "incomplete_range",
+          "positive": false,
+          "first_contact_frame": null,
+          "first_contact_offset": null,
+          "detail": "required=[137,201) missing_count=9 first_missing=192"
+        }
+      ]
+    },
+    {
+      "split": "readout_data_v1",
+      "discovered_videos": 800,
+      "total_samples": 797,
+      "positive_samples": 202,
+      "negative_samples": 595,
+      "positive_rate": 0.2534504391468005,
+      "negative_rate": 0.7465495608531995,
+      "invalid_samples": 3,
+      "status_counts": {
+        "valid": 797,
+        "incomplete_range": 3
+      },
+      "positive_first_contact_offset_stats": {
+        "min": 0.0,
+        "p25": 9.25,
+        "median": 30.0,
+        "p75": 42.0,
+        "max": 63.0,
+        "mean": 26.945544554455445
+      },
+      "invalid_examples": [
+        {
+          "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=dumbbell/0000_img.mp4",
+          "status": "incomplete_range",
+          "positive": false,
+          "first_contact_frame": null,
+          "first_contact_offset": null,
+          "detail": "required=[137,201) missing_count=11 first_missing=190"
+        },
+        {
+          "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=pyramid/0002_img.mp4",
+          "status": "incomplete_range",
+          "positive": false,
+          "first_contact_frame": null,
+          "first_contact_offset": null,
+          "detail": "required=[137,201) missing_count=2 first_missing=199"
+        },
+        {
+          "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=pyramid/0012_img.mp4",
+          "status": "incomplete_range",
+          "positive": false,
+          "first_contact_frame": null,
+          "first_contact_offset": null,
+          "detail": "required=[137,201) missing_count=8 first_missing=193"
+        }
+      ]
+    },
+    {
+      "split": "testdata_v1",
+      "discovered_videos": 1190,
+      "total_samples": 1189,
+      "positive_samples": 354,
+      "negative_samples": 835,
+      "positive_rate": 0.2977291841883936,
+      "negative_rate": 0.7022708158116064,
+      "invalid_samples": 1,
+      "status_counts": {
+        "valid": 1189,
+        "incomplete_range": 1
+      },
+      "positive_first_contact_offset_stats": {
+        "min": 0.0,
+        "p25": 9.25,
+        "median": 29.5,
+        "p75": 43.0,
+        "max": 63.0,
+        "mean": 28.019774011299436
+      },
+      "invalid_examples": [
+        {
+          "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/testdata_v1/bouncy_platform_pp-copy1/bouncy_platform-use_blocker_with_hole=1-target=pyramid/0003_img.mp4",
+          "status": "incomplete_range",
+          "positive": false,
+          "first_contact_frame": null,
+          "first_contact_offset": null,
+          "detail": "required=[137,201) missing_count=13 first_missing=188"
+        }
+      ]
+    }
+  ]
+}

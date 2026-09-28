@@ -1,0 +1,17 @@
+protocol: object_slot_generalization_v1
+model:
+  input_dim: 1280
+  hidden_dim: 256
+  slots: 8
+  iterations: 3
+data:
+  context_frames: 8
+  patch_tokens: 256
+  encoder_frozen: true
+  future_as_entity_input: false
+loss:
+  assignment_entropy_weight: 0.001
+  load_balance_weight: 0.01
+  tracking_weight: 0.2
+  reconstruction_weight: 0.5
+  invariance_weight: 0.1

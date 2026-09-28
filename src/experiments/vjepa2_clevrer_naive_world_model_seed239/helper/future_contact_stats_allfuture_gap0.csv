@@ -1,0 +1,4 @@
+split,discovered_videos,total_samples,positive_samples,negative_samples,positive_rate,negative_rate,invalid_samples
+data_v1,8000,8000,4026,3974,0.50325,0.49675,0
+readout_data_v1,800,800,378,422,0.4725,0.5275,0
+testdata_v1,1190,1190,623,567,0.5235294117647059,0.4764705882352941,0

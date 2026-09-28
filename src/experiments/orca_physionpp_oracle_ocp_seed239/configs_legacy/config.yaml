@@ -1,0 +1,25 @@
+launch:
+  project_name: vjepa2-baiz
+  experiment: orca
+  run_name: physionpp_orca_groundtruth_future_v1_8gpu
+  output_mode: both
+experiment:
+  checkpoint_dir: /data/shared_model/Orca-4B
+  physion_root: /data/ABDUCTIVE-WORLD/physion_v2/extracted
+  current:
+    frames: 16
+    step: 2
+  future:
+    frames: 16
+    step: 4
+    source: ground_truth_video
+  readout:
+    type: linear_binary
+    seed: 239
+    epochs: 300
+    lr: 0.01
+    weight_decay: 0.001
+  protocol:
+    decoder_used: false
+    shallow_probe_used: false
+    orca_nfp_head_used: false

@@ -1,0 +1,23 @@
+protocol: videomaev2_ek100_direct_heads
+seed: 239
+data:
+  video_root: /data/shared/datasets/EPIC-KITCHENS-processed_v1
+  train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+  validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+  crop_size: 224
+  clip_frames: 16
+  num_workers: 4
+model:
+  official_repo: recipe/src.experiments/VideoMAE2/repo
+  checkpoint: /data/shared/models/videomae-v2/distill/vit_b_k710_dl_from_giant.pth
+  architecture: vit_b
+  all_frames: 16
+  tubelet_size: 2
+  freeze_encoder: false
+training:
+  cache_batch_size: 2
+  head_batch_size: 256
+  epochs: 30
+  learning_rate: 0.0001
+  weight_decay: 0.05
+  finetune_batch_size: 1

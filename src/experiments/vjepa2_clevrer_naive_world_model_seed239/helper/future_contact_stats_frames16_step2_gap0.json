@@ -1,0 +1,87 @@
+{
+  "label": "target_contacting_zone",
+  "range_semantics": "half_open_contiguous_raw_frames",
+  "configuration": {
+    "root": "/data/ABDUCTIVE-WORLD/physion_v2/extracted",
+    "splits": [
+      "data_v1",
+      "readout_data_v1",
+      "testdata_v1"
+    ],
+    "video_glob": "**/*_img.mp4",
+    "clip_frames": 16,
+    "future_frame_step": 2,
+    "clip_gap": 0,
+    "raw_future_range_length": 32,
+    "range_start_formula": "P + clip_gap",
+    "range_end_exclusive_formula": "P + clip_gap + clip_frames * future_frame_step"
+  },
+  "splits": [
+    {
+      "split": "data_v1",
+      "discovered_videos": 8000,
+      "total_samples": 8000,
+      "positive_samples": 1466,
+      "negative_samples": 6534,
+      "positive_rate": 0.18325,
+      "negative_rate": 0.81675,
+      "invalid_samples": 0,
+      "status_counts": {
+        "valid": 8000
+      },
+      "positive_first_contact_offset_stats": {
+        "min": 0.0,
+        "p25": 8.0,
+        "median": 13.0,
+        "p75": 19.0,
+        "max": 31.0,
+        "mean": 12.655525238744884
+      },
+      "invalid_examples": []
+    },
+    {
+      "split": "readout_data_v1",
+      "discovered_videos": 800,
+      "total_samples": 800,
+      "positive_samples": 127,
+      "negative_samples": 673,
+      "positive_rate": 0.15875,
+      "negative_rate": 0.84125,
+      "invalid_samples": 0,
+      "status_counts": {
+        "valid": 800
+      },
+      "positive_first_contact_offset_stats": {
+        "min": 9.0,
+        "p25": 12.0,
+        "median": 13.0,
+        "p75": 17.0,
+        "max": 31.0,
+        "mean": 14.748031496062993
+      },
+      "invalid_examples": []
+    },
+    {
+      "split": "testdata_v1",
+      "discovered_videos": 1190,
+      "total_samples": 1190,
+      "positive_samples": 182,
+      "negative_samples": 1008,
+      "positive_rate": 0.15294117647058825,
+      "negative_rate": 0.8470588235294118,
+      "invalid_samples": 0,
+      "status_counts": {
+        "valid": 1190
+      },
+      "positive_first_contact_offset_stats": {
+        "min": 9.0,
+        "p25": 12.0,
+        "median": 13.5,
+        "p75": 17.0,
+        "max": 31.0,
+        "mean": 14.917582417582418
+      },
+      "invalid_examples": []
+    }
+  ]
+}

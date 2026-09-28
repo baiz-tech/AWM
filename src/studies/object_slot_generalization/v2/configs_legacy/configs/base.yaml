@@ -1,0 +1,15 @@
+protocol: ocse_v2
+entity_input: context_only
+future_as_entity_input: false
+model:
+  input_dim: 1280
+  hidden_dim: 256
+  slots: 8
+  iterations: 3
+loss:
+  objectness: 1.0
+  reconstruction: 0.5
+  tracking: 0.2
+  invariance: 0.2
+  assignment_entropy: 0.001
+  load_balance: 0.01
