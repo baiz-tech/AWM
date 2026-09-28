@@ -88,11 +88,9 @@ argument defaults through `src/core/run_context.py`, so the launcher passes no
 arguments and a module can also be started by hand with the same environment.
 An explicit CLI argument always overrides the config.
 
-**Step-by-step instructions for every experiment — training, baselines, controls
-and the offline analysis / intervention experiments — are in
-[`docs/experiment.md`](docs/experiment.md).** It also lists the dependency chain of
-each experiment, so read it before starting anything. The launcher contract itself
-is documented in [`tools/launcher/README.md`](tools/launcher/README.md).
+**Instructions for running the three AWM main experiments — Physion++, CLEVRER
+and EK100 — are in [`docs/exp/README.md`](docs/exp/README.md).** The launcher
+contract is documented in [`tools/launcher/README.md`](tools/launcher/README.md).
 
 ## Experiments
 

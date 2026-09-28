@@ -11,6 +11,7 @@ from src.data.physionpp.dataset import PhysionCurrentFutureDataset
 from src.core.backbone import build_model
 from src.data.physionpp.targets import make_targets
 from src.core.run_context import apply_cli_defaults, task_context
+from .output_guard import ensure_no_artifacts
 
 
 class Dataset(PhysionCurrentFutureDataset):
@@ -36,7 +37,8 @@ def main():
         dist.init_process_group("nccl", device_id=torch.device(f"cuda:{local_rank}"))
         rank, world_size = dist.get_rank(), dist.get_world_size()
     else: rank, world_size, local_rank = 0, 1, 0
-    if rank == 0 and output.exists() and any(output.iterdir()): raise FileExistsError(f"cache output is not empty: {output}")
+    # The launcher writes configs and logs here before the module starts.
+    ensure_no_artifacts(output)
     if distributed: dist.barrier()
     output.mkdir(parents=True, exist_ok=True); device = torch.device(f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu")
     transform = make_transforms(False, (1., 1.), (1., 1.), 0., False, False, int(data["crop_size"]))
@@ -53,7 +55,7 @@ def main():
     if distributed: dist.barrier()
     if rank == 0:
         manifest = {"protocol": "physionpp_fullpatch_structured_probe_v1", "split": args.split, "samples": len(dataset), "context_shape": [8, 256, 1280], "future_shape": [8, 256, 1280], "checkpoint": str(Path(args.checkpoint).resolve()), "world_size": world_size}
-        (output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+        (output / "cache_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     if distributed: dist.destroy_process_group()
 
 if __name__ == "__main__": main()

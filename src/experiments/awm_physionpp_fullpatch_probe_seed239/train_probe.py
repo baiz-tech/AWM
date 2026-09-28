@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
 from .structured_probe import PhysionStructuredProbe, loss
 from src.core.run_context import apply_cli_defaults, task_context
+from .output_guard import ensure_no_artifacts
 
 class Cache(Dataset):
     def __init__(self, root):
@@ -42,7 +43,9 @@ def main():
     parser = argparse.ArgumentParser(); parser.add_argument("--train-cache", required=True); parser.add_argument("--validation-cache", required=True); parser.add_argument("--output-dir", required=True); parser.add_argument("--epochs", type=int, default=30); parser.add_argument("--batch-size", type=int, default=2); parser.add_argument("--learning-rate", type=float, default=2e-4); parser.add_argument("--seed", type=int, default=239)
     apply_cli_defaults(parser, ctx)
     args = parser.parse_args(); rank, world, local = setup(); torch.manual_seed(args.seed + rank); device = torch.device(f"cuda:{local}" if torch.cuda.is_available() else "cpu"); output = Path(args.output_dir)
-    if rank == 0: output.mkdir(parents=True, exist_ok=False)
+    # The launcher already created this directory and recorded the run metadata.
+    ensure_no_artifacts(output)
+    output.mkdir(parents=True, exist_ok=True)
     if dist.is_initialized(): dist.barrier()
     train_set, val_set = Cache(args.train_cache), Cache(args.validation_cache)
     train_sampler, val_sampler = DistributedSampler(train_set, world, rank, shuffle=True, seed=args.seed), DistributedSampler(val_set, world, rank, shuffle=False)
@@ -60,6 +63,6 @@ def main():
             torch.save(payload, output / "latest.pt")
             if validation_metrics["total"] < best: best = validation_metrics["total"]; torch.save(payload, output / "best.pt")
             (output / "history.json").write_text(json.dumps(history, indent=2) + "\n")
-    if rank == 0: (output / "manifest.json").write_text(json.dumps({"protocol": "physionpp_fullpatch_structured_probe_ocp_v1", "best_validation_loss": best, "seed": args.seed, "world_size": world}, indent=2) + "\n")
+    if rank == 0: (output / "probe_manifest.json").write_text(json.dumps({"protocol": "physionpp_fullpatch_structured_probe_ocp_v1", "best_validation_loss": best, "seed": args.seed, "world_size": world}, indent=2) + "\n")
     if dist.is_initialized(): dist.destroy_process_group()
 if __name__ == "__main__": main()
