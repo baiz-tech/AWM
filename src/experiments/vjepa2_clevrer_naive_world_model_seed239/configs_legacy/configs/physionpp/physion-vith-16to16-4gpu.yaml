@@ -1,0 +1,124 @@
+launch:
+  run:
+    project: vjepa2-baiz
+    experiment: vjepa2_naive
+    name: physion_vith_native_predictor_16to16_4gpu
+    workspace_root: outputs/runs
+    data_root: /data/shyang/outputs
+  resources:
+    gpus: 4
+    cuda_visible_devices: 0,1,2,3
+    master_addr: 127.0.0.1
+    master_port: 29504
+  outputs: {}
+tasks:
+  train:
+    launch:
+      module: src.experiments.vjepa2_clevrer_naive_world_model_seed239.train
+      distributed: true
+      output_scope: run
+      log_name: train.log
+      pid_name: train.pid
+      label: Training
+      mirror_data_to_workspace: false
+      args:
+      - --config
+      - '{config}'
+    experiment:
+      meta:
+        seed: 239
+        dtype: bfloat16
+        pretrain_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+        encoder_checkpoint_key: target_encoder
+        save_every_freq: 5
+      protocol:
+        name: current_16_to_future_16
+      evaluation:
+        world_model_adapter: src.experiments.vjepa2_clevrer_naive_world_model_seed239.world_model_adapter
+      model:
+        model_name: vit_huge
+        patch_size: 16
+        tubelet_size: 2
+        pred_depth: 12
+        pred_embed_dim: 384
+        pred_num_heads: 12
+        num_mask_tokens: 1
+        zero_init_mask_tokens: true
+        uniform_power: true
+        use_rope: true
+        use_sdpa: true
+        use_silu: false
+        use_pred_silu: false
+        wide_silu: true
+        use_activation_checkpointing: true
+      data:
+        dataset: physionpp
+        root: /data/ABDUCTIVE-WORLD/physion_v2/extracted
+        datasets: null
+        eval_datasets: null
+        train_split: data_v1
+        eval_split: readout_data_v1
+        video_glob: '**/*_img.mp4'
+        crop_size: 256
+        clip_frames: 16
+        sampling_mode: prediction_start
+        current_frame_step: 2
+        future_frame_step: 4
+        clip_gap: 0
+        train_num_future_chunks: 1
+        eval_num_future_chunks: 1
+        batch_size: 2
+        eval_batch_size: 2
+        num_workers: 4
+        pin_mem: true
+        persistent_workers: true
+        max_train_videos: null
+        max_eval_videos: 256
+      data_aug:
+        horizontal_flip: true
+        random_resize_aspect_ratio:
+        - 0.9
+        - 1.1
+        random_resize_scale:
+        - 0.8
+        - 1.0
+        auto_augment: false
+        motion_shift: false
+        reprob: 0.0
+      loss:
+        type: l1
+      optimization:
+        epochs: 20
+        ipe: null
+        start_lr: 5.0e-05
+        lr: 0.0003
+        final_lr: 1.0e-05
+        warmup: 0.05
+        weight_decay: 0.04
+        betas:
+        - 0.9
+        - 0.999
+        eps: 1.0e-08
+        grad_clip: 1.0
+      logging:
+        log_freq: 10
+        max_eval_batches: 64
+  full_future_ocp:
+    launch:
+      name: full_future_ocp
+      config: src/experiments/vjepa2_clevrer_naive_world_model_seed239/configs/physionpp/physion-vith-16to16-full-future-ocp.yaml
+      module: src.shared.evaluate.physionpp.eval_full_future_ocp
+      output_scope: evaluation
+      log_name: eval.log
+      pid_name: eval.pid
+      label: OCP evaluation
+      mirror_data_to_workspace: true
+      args:
+      - --eval-config
+      - '{eval_config}'
+      - --config
+      - '{workspace_run_dir}/config.yaml'
+      - --checkpoint
+      - '{checkpoint}'
+      - --output-dir
+      - '{data_output_dir}'

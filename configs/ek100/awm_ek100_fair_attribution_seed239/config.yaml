@@ -1,0 +1,269 @@
+# EK100 parameter-matched attribution matrix (E0–E4)
+#
+# Canonical config (docs/manual/requirement.md section 4). The pre-migration
+# config is kept verbatim under
+#   src/experiments/fair_attribution/configs_legacy/
+#
+# Machine-specific paths are recorded in docs/manual/resource.md.
+#
+# One shared AttributionHead is trained for every variant; the feature
+# extractors are frozen and the only difference is the feature path.
+#   E0 raw grid -> fixed pooling
+#   E1 raw grid -> readout.world
+#   E2 raw grid -> shared.world
+#   E3 raw grid -> shared residual -> frozen readout.world
+#   E4 E3 feature + shared Entity/Dynamic/Relation state
+#
+# Requires the AWM EK100 readout and adapter checkpoints.
+
+launch:
+  run:
+    project: awm
+    dataset: ek100
+    experiment: awm_ek100_fair_attribution_seed239
+    stage: 0
+    workspace_root: outputs/runs
+    data_root: /data/shyang/outputs
+
+  resources:
+    gpus_per_node: 8
+    cuda_visible_devices: "0,1,2,3,4,5,6,7"
+    nnodes: 1
+    node_rank: 0
+    master_addr: 127.0.0.1
+    master_port: 29500
+
+  outputs:
+    workspace_output_root: "{workspace_root}/{dataset}/{experiment}/"
+    data_output_root: "{data_root}/{project}/{dataset}/{experiment}/"
+
+  extra_config:
+    paths:
+      processed_root: /data/shared/datasets/EPIC-KITCHENS-processed_v1
+      visor_root: /data/shared/datasets/EPIC-KITCHENS-VISOR-processed_v1
+      train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+      validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+      encoder_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+      orca_root: /data/shared_model/Orca-4B
+      python_bin: /data/shared/envs/vjepa2-312/bin/python
+    protocol:
+      crop_size: 256
+      clip_frames: 16
+      event_boundary: midpoint
+      minimum_sample_fps: 4.0
+
+tasks:
+  # The five variants write into one shared artifact root so that
+  # `evaluate` can find them all under a single --checkpoints directory:
+  #   {experiment_root}/E0/best.pt ... {experiment_root}/E4/best.pt
+  # (the per-task {large_output_dir} only holds logs and run metadata).
+  train_e0:
+    launch:
+      label: Train AttributionHead for variant E0
+      module: src.studies.fair_attribution.train
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: train.log
+      pid_name: train.pid
+      resume:
+        checkpoint: null
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--train": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/cache_train"
+        "--validation": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/cache_probe_validation"
+        "--readout": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/train_readout/best.pt"
+        "--adapter": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/train_adapter/best.pt"
+        "--output": "{experiment_root}/E0"
+        "--variant": "E0"
+      data:
+        train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+        validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+      training:
+        epochs: 12
+        batch_size: 64
+        attribution_learning_rate: 0.0003
+        weight_decay: 0.0005
+
+  train_e1:
+    launch:
+      label: Train AttributionHead for variant E1
+      module: src.studies.fair_attribution.train
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: train.log
+      pid_name: train.pid
+      resume:
+        checkpoint: null
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--train": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/cache_train"
+        "--validation": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/cache_probe_validation"
+        "--readout": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/train_readout/best.pt"
+        "--adapter": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/train_adapter/best.pt"
+        "--output": "{experiment_root}/E1"
+        "--variant": "E1"
+      data:
+        train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+        validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+      training:
+        epochs: 12
+        batch_size: 64
+        attribution_learning_rate: 0.0003
+        weight_decay: 0.0005
+
+  train_e2:
+    launch:
+      label: Train AttributionHead for variant E2
+      module: src.studies.fair_attribution.train
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: train.log
+      pid_name: train.pid
+      resume:
+        checkpoint: null
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--train": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/cache_train"
+        "--validation": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/cache_probe_validation"
+        "--readout": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/train_readout/best.pt"
+        "--adapter": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/train_adapter/best.pt"
+        "--output": "{experiment_root}/E2"
+        "--variant": "E2"
+      data:
+        train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+        validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+      training:
+        epochs: 12
+        batch_size: 64
+        attribution_learning_rate: 0.0003
+        weight_decay: 0.0005
+
+  train_e3:
+    launch:
+      label: Train AttributionHead for variant E3
+      module: src.studies.fair_attribution.train
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: train.log
+      pid_name: train.pid
+      resume:
+        checkpoint: null
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--train": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/cache_train"
+        "--validation": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/cache_probe_validation"
+        "--readout": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/train_readout/best.pt"
+        "--adapter": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/train_adapter/best.pt"
+        "--output": "{experiment_root}/E3"
+        "--variant": "E3"
+      data:
+        train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+        validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+      training:
+        epochs: 12
+        batch_size: 64
+        attribution_learning_rate: 0.0003
+        weight_decay: 0.0005
+
+  train_e4:
+    launch:
+      label: Train AttributionHead for variant E4
+      module: src.studies.fair_attribution.train
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: train.log
+      pid_name: train.pid
+      resume:
+        checkpoint: null
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--train": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/cache_train"
+        "--validation": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/cache_probe_validation"
+        "--readout": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/train_readout/best.pt"
+        "--adapter": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/train_adapter/best.pt"
+        "--output": "{experiment_root}/E4"
+        "--variant": "E4"
+      data:
+        train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+        validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+      training:
+        epochs: 12
+        batch_size: 64
+        attribution_learning_rate: 0.0003
+        weight_decay: 0.0005
+
+  evaluate:
+    launch:
+      label: Evaluate every variant on the official validation split
+      module: src.studies.fair_attribution.evaluate
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: evaluate.log
+      pid_name: evaluate.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--validation": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/cache_final_validation"
+        "--readout": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/train_readout/best.pt"
+        "--adapter": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/train_adapter/best.pt"
+        "--checkpoints": "{experiment_root}"
+        "--output": "{large_output_dir}/metrics.json"
+      data:
+        train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+        validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+      training:
+        epochs: 12
+        batch_size: 64
+        attribution_learning_rate: 0.0003
+        weight_decay: 0.0005
+
+  parameter_report:
+    launch:
+      label: Report parameter counts per variant
+      module: src.studies.fair_attribution.parameter_report
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: parameter_report.log
+      pid_name: parameter_report.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--readout": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/train_readout/best.pt"
+        "--adapter": "{experiment_root}/../awm_ek100_multiscale_adapter_seed239/train_adapter/best.pt"
+        "--output": "{large_output_dir}/parameters.json"
+        "--device": "cpu"
+      data:
+        train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+        validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+      training:
+        epochs: 12
+        batch_size: 64
+        attribution_learning_rate: 0.0003
+        weight_decay: 0.0005
+

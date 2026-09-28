@@ -1,0 +1,46 @@
+{
+  "task": "noun",
+  "count": 64,
+  "results": {
+    "entity": {
+      "n": 13,
+      "accuracy": 0.0,
+      "balanced_accuracy": 0.0
+    },
+    "dynamic": {
+      "n": 13,
+      "accuracy": 0.0,
+      "balanced_accuracy": 0.0
+    },
+    "relation": {
+      "n": 13,
+      "accuracy": 0.0,
+      "balanced_accuracy": 0.0
+    },
+    "full": {
+      "n": 13,
+      "accuracy": 0.07692307978868484,
+      "balanced_accuracy": 0.05
+    },
+    "entity+dynamic": {
+      "n": 13,
+      "accuracy": 0.0,
+      "balanced_accuracy": 0.0
+    },
+    "entity+relation": {
+      "n": 13,
+      "accuracy": 0.0,
+      "balanced_accuracy": 0.0
+    },
+    "dynamic+relation": {
+      "n": 13,
+      "accuracy": 0.0,
+      "balanced_accuracy": 0.0
+    },
+    "entity+dynamic+relation": {
+      "n": 13,
+      "accuracy": 0.0,
+      "balanced_accuracy": 0.0
+    }
+  }
+}

@@ -1,0 +1,358 @@
+# AWM on CLEVRER — full-patch structured probe over the frozen V-JEPA 2 world
+# model, followed by the CLEVRER predictive-QA pipeline.
+#
+# Protocol:
+#   prepare_targets -> object/pair targets for train and validation
+#   cache_latents   -> frozen 16x16 context/predicted-future patch latents
+#   train_probe     -> object-centric structured probe
+#   eval_probe      -> object / trajectory / pair / contact metrics
+#   qa_eval         -> CLEVRER predictive QA (option and question accuracy)
+#
+# Validation drives checkpoint selection; the CLEVRER test split ships no labels,
+# so `test` can only produce a submission.
+#
+# `tasks.train` deliberately has no launch block: it is the shared world-model and
+# data-protocol block that cache_latents reads out of the *raw* config through
+# `config["tasks"]["train"]["experiment"]` (see src/core/run_context.py `block`).
+#
+# Task defaults live under `experiment.cli_defaults`.
+
+launch:
+  run:
+    project: awm
+    dataset: clevrer
+    experiment: awm_clevrer_fullpatch_probe_seed239
+    stage: 0
+    workspace_root: outputs/runs
+    data_root: /data/shyang/outputs
+
+  resources:
+    gpus_per_node: 8
+    cuda_visible_devices: "0,1,2,3,4,5,6,7"
+    nnodes: 1
+    node_rank: 0
+    master_addr: 127.0.0.1
+    master_port: 29500
+
+  outputs:
+    workspace_output_root: "{workspace_root}/{dataset}/{experiment}/"
+    data_output_root: "{data_root}/{project}/{dataset}/{experiment}/"
+
+  extra_config:
+    paths:
+      clevrer_root: /data/shared/datasets/CLEVRER
+      clevrer_annotations: /data/shared/datasets/CLEVRER/official_code/executor/data
+      encoder_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+      world_checkpoint: /data/shyang/outputs/vjepa2-baiz/vjepa2_naive/clevrer_vith_16to16_stride2_8gpu/best.pt
+      python_bin: /data/shared/envs/vjepa2-312/bin/python
+    protocol:
+      video_glob: "*.mp4"
+      crop_size: 256
+      clip_frames: 16
+      current_frame_step: 2
+      future_frame_step: 2
+      clip_gap: 0
+      window_starts: "0,32,64"
+      future_step: 2
+      score_threshold: 0.5
+
+tasks:
+  # ------------------------------------------------- shared protocol (no launch)
+  train:
+    experiment:
+      meta:
+        seed: 239
+        dtype: bfloat16
+        pretrain_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+        encoder_checkpoint_key: target_encoder
+      model:
+        model_name: vit_huge
+        patch_size: 16
+        tubelet_size: 2
+        pred_depth: 12
+        pred_embed_dim: 384
+        pred_num_heads: 12
+        num_mask_tokens: 1
+        zero_init_mask_tokens: true
+        uniform_power: true
+        use_rope: true
+        use_sdpa: true
+        use_silu: false
+        use_pred_silu: false
+        wide_silu: true
+        use_activation_checkpointing: true
+      data:
+        dataset: clevrer
+        root: /data/shared/datasets/CLEVRER
+        train_split: train
+        eval_split: validation
+        video_glob: "*.mp4"
+        crop_size: 256
+        clip_frames: 16
+        current_frame_step: 2
+        future_frame_step: 2
+        clip_gap: 0
+        pin_mem: true
+        persistent_workers: true
+      window_starts: [0, 32, 64]
+
+  # ------------------------------------------------------------------- targets
+  prepare_targets_train:
+    launch:
+      label: Build CLEVRER object/pair targets for the training split
+      module: src.experiments.awm_clevrer_fullpatch_probe_seed239.prepare_targets
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: prepare_targets_train.log
+      pid_name: prepare_targets_train.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --dataset-root: "{cfg:launch.extra_config.paths.clevrer_root}"
+        --split: "train"
+        --output: "{large_output_dir}/targets_train.pt"
+        --window-starts: "{cfg:launch.extra_config.protocol.window_starts}"
+        --future-step: "{cfg:launch.extra_config.protocol.future_step}"
+        --score-threshold: "{cfg:launch.extra_config.protocol.score_threshold}"
+
+  prepare_targets_validation:
+    launch:
+      label: Build CLEVRER object/pair targets for the validation split
+      module: src.experiments.awm_clevrer_fullpatch_probe_seed239.prepare_targets
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: prepare_targets_validation.log
+      pid_name: prepare_targets_validation.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --dataset-root: "{cfg:launch.extra_config.paths.clevrer_root}"
+        --split: "validation"
+        --output: "{large_output_dir}/targets_validation.pt"
+        --window-starts: "{cfg:launch.extra_config.protocol.window_starts}"
+        --future-step: "{cfg:launch.extra_config.protocol.future_step}"
+        --score-threshold: "{cfg:launch.extra_config.protocol.score_threshold}"
+
+  # -------------------------------------------------------------------- caches
+  # The module writes <output-dir>/<split> and train_probe reads
+  # <cache-root>/{train,validation}: both split tasks share one artifact root,
+  # while each keeps its own log and manifest directory.
+  cache_latents_train:
+    launch:
+      label: Cache frozen latents for the CLEVRER training split
+      module: src.experiments.awm_clevrer_fullpatch_probe_seed239.cache_latents
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_latents_train.log
+      pid_name: cache_latents_train.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --config: "{config}"
+        --split: "train"
+        --checkpoint: "{cfg:launch.extra_config.paths.world_checkpoint}"
+        --output-dir: "{experiment_root}/cache_latents"
+        --window-starts: "{cfg:launch.extra_config.protocol.window_starts}"
+        --batch-size: "1"
+        --num-workers: "2"
+
+  cache_latents_validation:
+    launch:
+      label: Cache frozen latents for the CLEVRER validation split
+      module: src.experiments.awm_clevrer_fullpatch_probe_seed239.cache_latents
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_latents_validation.log
+      pid_name: cache_latents_validation.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --config: "{config}"
+        --split: "validation"
+        --checkpoint: "{cfg:launch.extra_config.paths.world_checkpoint}"
+        --output-dir: "{experiment_root}/cache_latents"
+        --window-starts: "{cfg:launch.extra_config.protocol.window_starts}"
+        --batch-size: "1"
+        --num-workers: "2"
+
+  # --------------------------------------------------------- structured probe
+  train_probe:
+    launch:
+      label: Train the CLEVRER object-centric structured probe
+      module: src.experiments.awm_clevrer_fullpatch_probe_seed239.train_probe
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: train_probe.log
+      pid_name: train_probe.pid
+      resume:
+        checkpoint: null
+      args: []
+    experiment:
+      seed: 239
+      epochs: 30
+      batch_size: 1
+      num_workers: 2
+      hidden_dim: 256
+      num_heads: 8
+      num_slots: 8
+      slot_depth: 1
+      transition_depth: 1
+      interaction_depth: 1
+      ffn_dim: 1024
+      dropout: 0.1
+      learning_rate: 0.0002
+      weight_decay: 0.04
+      cli_defaults:
+        --cache-root: "{experiment_root}/cache_latents"
+        --train-targets: "{experiment_root}/prepare_targets_train/targets_train.pt"
+        --validation-targets: "{experiment_root}/prepare_targets_validation/targets_validation.pt"
+        --output-dir: "{large_output_dir}"
+        --epochs: "30"
+        --batch-size: "1"
+        --num-workers: "2"
+        --hidden-dim: "256"
+        --num-heads: "8"
+        --num-slots: "8"
+        --slot-depth: "1"
+        --transition-depth: "1"
+        --interaction-depth: "1"
+        --ffn-dim: "1024"
+        --dropout: "0.1"
+        --learning-rate: "0.0002"
+        --weight-decay: "0.04"
+        --seed: "{seed}"
+
+  # --------------------------------------------------------------- probe eval
+  eval_probe:
+    launch:
+      label: Evaluate object / trajectory / pair / contact metrics on validation
+      module: src.experiments.awm_clevrer_fullpatch_probe_seed239.eval_probe
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: eval_probe.log
+      pid_name: eval_probe.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --cache-root: "{experiment_root}/cache_latents"
+        --targets: "{experiment_root}/prepare_targets_validation/targets_validation.pt"
+        --checkpoint: "{experiment_root}/train_probe/best.pt"
+        --output-dir: "{large_output_dir}"
+        --batch-size: "4"
+        --distributed: "true"
+
+  inspect_scene:
+    launch:
+      label: Dump one structured-probe validation scene for inspection
+      module: src.experiments.awm_clevrer_fullpatch_probe_seed239.inspect_scene
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: inspect_scene.log
+      pid_name: inspect_scene.pid
+      args: []
+    experiment:
+      seed: 20260814
+      cli_defaults:
+        --cache-root: "{experiment_root}/cache_latents"
+        --targets: "{experiment_root}/prepare_targets_validation/targets_validation.pt"
+        --dataset-root: "{cfg:launch.extra_config.paths.clevrer_root}"
+        --checkpoint: "{experiment_root}/train_probe/best.pt"
+        --output-dir: "{large_output_dir}"
+        --render-video: "true"
+
+  # ------------------------------------------------------------------------ QA
+  qa_eval:
+    launch:
+      label: CLEVRER predictive-QA pipeline (option and question accuracy)
+      module: src.data.clevrer.qa_pipeline
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: qa_eval.log
+      pid_name: qa_eval.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --config: "{config}"
+        --workspace-run-dir: "{workspace_experiment_root}"
+        --data-run-dir: "{data_experiment_root}"
+        --workspace-output-dir: "{workspace_experiment_root}/qa_eval"
+        --data-output-dir: "{data_experiment_root}/qa_eval"
+        --world-checkpoint: "{cfg:launch.extra_config.paths.world_checkpoint}"
+        --base-port: "{master_port}"
+        --master-addr: "{master_addr}"
+        --num-gpus: "{nproc}"
+        --python-bin: "{cfg:launch.extra_config.paths.python_bin}"
+        --output-mode: "{cfg:tasks.qa_eval.launch.output_mode}"
+      evaluation:
+        world_model_adapter: src.experiments.vjepa2_clevrer_naive_world_model_seed239.world_model_adapter
+        probe_output_adapter: src.experiments.awm_clevrer_fullpatch_probe_seed239.probe_adapter
+        probe_checkpoint: "{experiment_root}/train_probe/best.pt"
+        checkpoint_mode: frozen_reference
+      qa:
+        backend: native_aloe
+        protocol: compatibility_stride2
+        data:
+          token_source: online
+          future_generation: rollout
+        representation:
+          type: global_tokens
+          layout: BTND
+          num_slots: 4
+          feature_dim: 1280
+        temporal:
+          trajectory_length: 80
+          frame_offset: 5
+          predictive_window: true
+        annotation_root: /data/shared/datasets/CLEVRER/official_code/executor/data
+        question_types: [predictive]
+        skip_existing_trajectories: true
+        learned_tokens_per_step: 16
+        use_probe_tokens: true
+        probe_token_mode: structured_supervised_sequence_v2
+        probe_hidden_dim: 256
+        answer_head_activation: gelu
+        export_batch_size: 1
+        export_num_workers: 2
+        video_len: 128
+        n_sample_frames: 16
+        max_n_objects: 7
+        max_visual_tokens: 16
+        max_question_len: 20
+        max_choice_len: 12
+        scene_batch_size: 96
+        train_batch_size: 16
+        val_batch_size: 32
+        num_workers: 4
+        min_token_frequency: 1
+        input_dim: 16
+        num_layers: 12
+        num_heads: 8
+        ffn_dim: 512
+        cls_mlp_size: 128
+        dropout: 0.1
+        epochs: 400
+        learning_rate: 0.0001
+        weight_decay: 0.0
+        grad_clip: 1.0

@@ -1,0 +1,10 @@
+protocol: ek100_fair_attribution_e0_e4_v1
+seed: 239
+data:
+  train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+  validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+training:
+  epochs: 12
+  batch_size: 64
+  attribution_learning_rate: 0.0003
+  weight_decay: 0.0005

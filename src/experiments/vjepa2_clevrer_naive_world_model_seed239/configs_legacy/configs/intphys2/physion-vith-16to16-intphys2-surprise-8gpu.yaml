@@ -1,0 +1,52 @@
+launch: {}
+tasks:
+  intphys2_surprise:
+    launch:
+      name: intphys2_main_surprise
+      module: src.shared.evaluate.intphys2.eval_surprise
+      distributed: true
+      output_scope: evaluation
+      log_name: eval.log
+      pid_name: eval.pid
+      label: IntPhys2 predictive-surprise evaluation
+      mirror_data_to_workspace: true
+      training_config: src/experiments/vjepa2_clevrer_naive_world_model_seed239/configs/physionpp/physion-vith-16to16-8gpu.yaml
+      # This historical naive run stores best.pt in the workspace side.
+      # New runs should keep the standard data-side checkpoint layout.
+      checkpoint:
+        base: workspace_run_dir
+        path: best.pt
+      args:
+      - --eval-config
+      - '{config}'
+      - --config
+      - '{workspace_run_dir}/config.yaml'
+      - --checkpoint
+      - '{checkpoint}'
+      - --output-dir
+      - '{data_output_dir}'
+      - --distributed
+      launcher:
+        gpus: 8
+        cuda_visible_devices: 0,1,2,3,4,5,6,7
+        master_addr: 127.0.0.1
+        master_port: 37201
+    experiment:
+      evaluation:
+        world_model_adapter: src.experiments.vjepa2_clevrer_naive_world_model_seed239.world_model_adapter
+      intphys2:
+        root: /data/shared/datasets/IntPhys2
+        split: Main
+        current_frame_step: 2
+        future_frame_step: 4
+        clip_gap: 0
+        window_stride: 32
+        window_batch_size: 1
+        include_last_window: true
+        max_scenes: null
+        max_windows_per_video: null
+        primary_signal: model
+        primary_metric: l1
+        primary_aggregation: mean
+        bootstrap_samples: 1000
+        seed: 239

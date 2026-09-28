@@ -1,0 +1,13 @@
+{
+  "protocol": "hasp_physion_offline_features_v1",
+  "count": 8000,
+  "features": [
+    "entity",
+    "dynamic",
+    "relation",
+    "full"
+  ],
+  "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/train",
+  "probe": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/probe/best.pt",
+  "world_size": 1
+}

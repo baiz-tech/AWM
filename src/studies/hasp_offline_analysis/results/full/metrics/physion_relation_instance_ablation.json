@@ -1,0 +1,54 @@
+{
+  "protocol": "physion_true_instance_contact_pair_ablation_v1",
+  "input_samples": 800,
+  "eligible_contact_noncontact_samples": 372,
+  "summary": {
+    "baseline": {
+      "presence_auroc": 0.9261437296880335,
+      "entity_extent_mae": 0.03067002828008955,
+      "dynamic_speed_mae": 0.06779038127134496,
+      "contact_auroc": 0.9632673974893141,
+      "relation_distance_mae": 0.019583857804896868,
+      "relation_ttc_mae": 0.13059171379151185,
+      "ocp_auroc": 0.6995058139534883
+    },
+    "contact_pair_mask": {
+      "presence_auroc": 0.9193960469909837,
+      "entity_extent_mae": 0.034460001994113004,
+      "dynamic_speed_mae": 0.07351861269743759,
+      "contact_auroc": 0.9487736472364926,
+      "relation_distance_mae": 0.02250932006239795,
+      "relation_ttc_mae": 0.1376425491212766,
+      "ocp_auroc": 0.6518023255813954
+    },
+    "noncontact_pair_mask": {
+      "presence_auroc": 0.9314725780548565,
+      "entity_extent_mae": 0.03544888723735945,
+      "dynamic_speed_mae": 0.07543852354010827,
+      "contact_auroc": 0.9518027857557003,
+      "relation_distance_mae": 0.020825318808476236,
+      "relation_ttc_mae": 0.13485560557598192,
+      "ocp_auroc": 0.6175290697674418
+    }
+  },
+  "delta_vs_baseline": {
+    "contact_pair_mask": {
+      "presence_auroc": -0.006747682697049839,
+      "entity_extent_mae": 0.0037899737140234535,
+      "dynamic_speed_mae": 0.005728231426092634,
+      "contact_auroc": -0.014493750252821513,
+      "relation_distance_mae": 0.002925462257501083,
+      "relation_ttc_mae": 0.007050835329764749,
+      "ocp_auroc": -0.04770348837209293
+    },
+    "noncontact_pair_mask": {
+      "presence_auroc": 0.0053288483668230135,
+      "entity_extent_mae": 0.004778858957269899,
+      "dynamic_speed_mae": 0.007648142268763314,
+      "contact_auroc": -0.011464611733613794,
+      "relation_distance_mae": 0.0012414610035793687,
+      "relation_ttc_mae": 0.004263891784470064,
+      "ocp_auroc": -0.0819767441860465
+    }
+  }
+}

@@ -1,0 +1,183 @@
+# VideoMAE v2 baseline on Physion++ — ground-truth future substitution (paper Table main_results, row 'VideoMAE v2')
+#
+# Canonical config (docs/manual/requirement.md section 4). The pre-migration
+# config is kept verbatim under
+#   src/experiments/videomae2_physionpp_oracle_ocp_seed239/configs_legacy/
+#
+# Machine-specific paths are recorded in docs/manual/resource.md.
+#
+# Same protocol as the Orca baseline: the ground-truth future clip is
+# encoded in place of a predicted future latent.
+#
+# NOTE: the encoder is built from the upstream OpenGVLab/VideoMAEv2 checkout
+# named by ``model.official_repo`` (``models/modeling_finetune.py``); that
+# repository is not vendored. Clone it next to the vendored V-JEPA 2 checkout,
+# e.g. ``git clone https://github.com/OpenGVLab/VideoMAEv2 external/VideoMAEv2``,
+# and point ``model.official_repo`` / ``model.checkpoint`` at your copy. The
+# loader fails loudly when either path is missing.
+
+launch:
+  run:
+    project: awm
+    dataset: physionpp
+    experiment: videomae2_physionpp_oracle_ocp_seed239
+    stage: 0
+    workspace_root: outputs/runs
+    data_root: /data/shyang/outputs
+
+  resources:
+    gpus_per_node: 8
+    cuda_visible_devices: "0,1,2,3,4,5,6,7"
+    nnodes: 1
+    node_rank: 0
+    master_addr: 127.0.0.1
+    master_port: 29500
+
+  outputs:
+    workspace_output_root: "{workspace_root}/{dataset}/{experiment}/"
+    data_output_root: "{data_root}/{project}/{dataset}/{experiment}/"
+
+  extra_config:
+    paths:
+      physion_root: /data/ABDUCTIVE-WORLD/physion_v2/extracted
+      encoder_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+      orca_root: /data/shared_model/Orca-4B
+      python_bin: /data/shared/envs/vjepa2-312/bin/python
+    protocol:
+      video_glob: "**/*_img.mp4"
+      train_split: data_v1
+      readout_split: readout_data_v1
+      test_split: testdata_v1
+      crop_size: 256
+      clip_frames: 16
+      current_frame_step: 2
+      future_frame_step: 4
+      clip_gap: 0
+
+tasks:
+  cache_train:
+    launch:
+      label: Cache data_v1 latents
+      module: src.experiments.videomae2_physionpp_oracle_ocp_seed239.cache_latents
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_latents.log
+      pid_name: cache_latents.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--split": "data_v1"
+        "--output-dir": "{experiment_root}/cache"
+      model:
+        checkpoint: /data/shared/models/videomae-v2/distill/vit_b_k710_dl_from_giant.pth
+        official_repo: external/VideoMAEv2
+        architecture: vit_b
+        freeze_encoder: true
+        remove_cls_token: false
+        all_frames: 16
+        tubelet_size: 2
+      data:
+        root: /data/ABDUCTIVE-WORLD/physion_v2/extracted
+        clip_frames: 16
+        current_frame_step: 2
+        future_frame_step: 4
+        clip_gap: 0
+        input_size: 224
+        batch_size: 4
+        num_workers: 4
+      seed: 239
+
+  cache_readout:
+    launch:
+      label: Cache readout_data_v1 latents
+      module: src.experiments.videomae2_physionpp_oracle_ocp_seed239.cache_latents
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_latents.log
+      pid_name: cache_latents.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--split": "readout_data_v1"
+        "--output-dir": "{experiment_root}/cache"
+      model:
+        checkpoint: /data/shared/models/videomae-v2/distill/vit_b_k710_dl_from_giant.pth
+        official_repo: external/VideoMAEv2
+        architecture: vit_b
+        freeze_encoder: true
+        remove_cls_token: false
+        all_frames: 16
+        tubelet_size: 2
+      data:
+        root: /data/ABDUCTIVE-WORLD/physion_v2/extracted
+        clip_frames: 16
+        current_frame_step: 2
+        future_frame_step: 4
+        clip_gap: 0
+        input_size: 224
+        batch_size: 4
+        num_workers: 4
+      seed: 239
+
+  cache_test:
+    launch:
+      label: Cache testdata_v1 latents
+      module: src.experiments.videomae2_physionpp_oracle_ocp_seed239.cache_latents
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_latents.log
+      pid_name: cache_latents.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--split": "testdata_v1"
+        "--output-dir": "{experiment_root}/cache"
+      model:
+        checkpoint: /data/shared/models/videomae-v2/distill/vit_b_k710_dl_from_giant.pth
+        official_repo: external/VideoMAEv2
+        architecture: vit_b
+        freeze_encoder: true
+        remove_cls_token: false
+        all_frames: 16
+        tubelet_size: 2
+      data:
+        root: /data/ABDUCTIVE-WORLD/physion_v2/extracted
+        clip_frames: 16
+        current_frame_step: 2
+        future_frame_step: 4
+        clip_gap: 0
+        input_size: 224
+        batch_size: 4
+        num_workers: 4
+      seed: 239
+
+  train_ocp:
+    launch:
+      label: Train the linear OCP readout on VideoMAE v2 features
+      module: src.experiments.videomae2_physionpp_oracle_ocp_seed239.train_ocp
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: train_ocp.log
+      pid_name: train_ocp.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--cache-root": "{experiment_root}/cache"
+        "--output-dir": "{large_output_dir}"
+        "--epochs": "300"
+        "--lr": "0.01"
+        "--weight-decay": "0.001"
+        "--seed": "{seed}"
+      seed: 239
+

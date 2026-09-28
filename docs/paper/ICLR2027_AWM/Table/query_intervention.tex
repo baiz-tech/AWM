@@ -1,0 +1,40 @@
+\begin{table}[t]
+\centering
+\caption{
+Relevant-object intervention on CLEVRER predictive queries.
+\textit{AWM} uses all Entity evidence;
+\textit{AWM w/o Relevant Object} removes the object referred to by the query;
+and \textit{AWM w/o Irrelevant Object} removes an object unrelated to the query.
+}
+\label{tab:query-intervention}
+\small
+\renewcommand{\arraystretch}{1.03}
+
+\begin{tabularx}{0.78\linewidth}{@{}Lcccc@{}}
+\toprule\toprule
+\textbf{Condition}
+& \makecell{\textbf{Question}\\\textbf{Correct}}
+& \makecell{\textbf{Question}\\\textbf{Acc.} $\uparrow$}
+& \makecell{\textbf{Option}\\\textbf{Correct}}
+& \makecell{\textbf{Option}\\\textbf{Acc.} $\uparrow$} \\
+\midrule
+\textbf{AWM}
+& 1,785/3,557
+& \textbf{50.18\%}
+& 5,099/7,114
+& \textbf{71.68\%} \\
+
+AWM w/o Relevant Object
+& 1,546/3,557
+& 43.46\%
+& 4,752/7,114
+& 66.80\% \\
+
+AWM w/o Irrelevant Object
+& 1,684/3,557
+& 47.34\%
+& 4,948/7,114
+& 69.55\% \\
+\bottomrule
+\end{tabularx}
+\end{table}

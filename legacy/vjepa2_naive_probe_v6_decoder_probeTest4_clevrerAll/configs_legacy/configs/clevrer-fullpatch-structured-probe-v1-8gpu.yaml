@@ -1,0 +1,140 @@
+launch:
+  run:
+    project: vjepa2-baiz
+    experiment: vjepa2_naive_probe_v6_decoder_probeTest4_clevrerAll
+    name: clevrer_vith_16to16_dynamics_decoder_v1_8gpu
+    workspace_root: outputs/runs
+    data_root: /data/shyang/outputs
+  resources:
+    gpus: 8
+    cuda_visible_devices: 0,1,2,3,4,5,6,7
+    master_addr: 127.0.0.1
+    base_port: 29720
+  outputs: {}
+
+tasks:
+  train:
+    experiment:
+      meta:
+        seed: 239
+        dtype: bfloat16
+        pretrain_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+        encoder_checkpoint_key: target_encoder
+      model:
+        model_name: vit_huge
+        patch_size: 16
+        tubelet_size: 2
+        pred_depth: 12
+        pred_embed_dim: 384
+        pred_num_heads: 12
+        num_mask_tokens: 10
+        zero_init_mask_tokens: true
+        uniform_power: true
+        use_rope: true
+        use_sdpa: true
+        use_silu: false
+        use_pred_silu: false
+        wide_silu: true
+        use_activation_checkpointing: true
+      data:
+        dataset: clevrer
+        root: /data/shared/datasets/CLEVRER
+        train_split: train
+        eval_split: validation
+        video_glob: '*.mp4'
+        crop_size: 256
+        clip_frames: 16
+        current_frame_step: 2
+        future_frame_step: 2
+        clip_gap: 0
+        pin_mem: true
+        persistent_workers: true
+
+  qa_eval:
+    launch:
+      name: qa_dynamics_decoder_v1
+      module: recipe.shared.evaluate.clevrer_v2.qa_pipeline
+      output_scope: evaluation
+      log_name: pipeline.log
+      pid_name: pipeline.pid
+      label: CLEVRER structured-supervised sequence QA pipeline
+      archive_existing: true
+      checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+      args:
+      - --config
+      - '{config}'
+      - --workspace-run-dir
+      - '{workspace_run_dir}'
+      - --data-run-dir
+      - '{data_run_dir}'
+      - --workspace-output-dir
+      - '{workspace_output_dir}'
+      - --data-output-dir
+      - '{data_output_dir}'
+      - --world-checkpoint
+      - '{checkpoint}'
+      - --base-port
+      - '{base_port}'
+      - --master-addr
+      - '{master_addr}'
+      - --num-gpus
+      - '{num_gpus}'
+      - --python-bin
+      - '{python_bin}'
+      launcher:
+        gpus: 8
+        cuda_visible_devices: 0,1,2,3,4,5,6,7
+        master_addr: 127.0.0.1
+        base_port: 29720
+    experiment:
+      evaluation:
+        world_model_adapter: recipe.vjepa2_naive.world_model_adapter
+        probe_output_adapter: recipe.vjepa2_naive_probe_v6_decoder_probeTest4_clevrerAll.scripts.clevrer.probe_adapter
+        probe_checkpoint: outputs/runs/vjepa2_naive_probe_v6_decoder_probeTest4_clevrerAll/clevrer_direct_zdyn_probe_seed239_v1/best.pt
+      qa:
+        backend: native_aloe
+        protocol: compatibility_stride2
+        data:
+          token_source: online
+          future_generation: rollout
+        representation:
+          type: global_tokens
+          layout: BTND
+          num_slots: 4
+          feature_dim: 1280
+        temporal:
+          trajectory_length: 80
+          frame_offset: 5
+          predictive_window: true
+        annotation_root: /data/shared/datasets/CLEVRER/official_code/executor/data
+        question_types: [predictive]
+        skip_existing_trajectories: true
+        archive_existing_probe_outputs: true
+        learned_tokens_per_step: 16
+        use_probe_tokens: true
+        probe_token_mode: structured_supervised_sequence_v2
+        probe_hidden_dim: 256
+        answer_head_activation: gelu
+        export_batch_size: 1
+        export_num_workers: 2
+        video_len: 128
+        n_sample_frames: 16
+        max_n_objects: 7
+        max_visual_tokens: 16
+        max_question_len: 20
+        max_choice_len: 12
+        scene_batch_size: 96
+        train_batch_size: 16
+        val_batch_size: 32
+        num_workers: 4
+        min_token_frequency: 1
+        input_dim: 16
+        num_layers: 12
+        num_heads: 8
+        ffn_dim: 512
+        cls_mlp_size: 128
+        dropout: 0.1
+        epochs: 400
+        learning_rate: 0.0001
+        weight_decay: 0.0
+        grad_clip: 1.0

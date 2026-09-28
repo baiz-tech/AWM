@@ -1,0 +1,359 @@
+# HASP offline analysis — the ablation / interpretability experiments behind the
+# paper's analysis tables.
+#
+# These tasks never touch training code or checkpoints. They read the frozen
+# artifacts produced by the training experiments, export compact state features,
+# and then fit probes or run interventions on top of them.
+#
+# Output root follows AGENTS.md section 7: cross-run analysis lives in
+# outputs/analyses/<analysis_name>/, so `workspace_output_root` is overridden.
+#
+# Paper mapping (indicative):
+#   extract_*                          -> reusable per-sample state features
+#   physion_factor_probe               -> native_factor_information / native_factors
+#   physion_slot_time_probe            -> physion_slot_diagnostics
+#   physion_pair_probe                 -> relation_information / future_evidence_pair
+#   physion_dynamic_selectivity        -> dynamic_information / granularity_specificity
+#   clevrer_dynamic_selectivity        -> clevrer_future_predictability
+#   physion_input_ablation             -> input_temporal_intervention / input_object_intervention
+#   physion_relation_instance_ablation -> relation_selective_intervention
+#   physion_predictor_regen_ablation    -> physion_future_input / physion_future_semantics
+#   clevrer_relation_instance_ablation -> clevrer_relation_interaction
+#   entity_specialization              -> entity_information
+#   probe_matrix                       -> cross_task_reuse
+#   visualize_ek100                    -> HASP action evidence traces
+
+launch:
+  run:
+    project: awm
+    dataset: analyses
+    experiment: hasp_offline_analysis
+    stage: 0
+    workspace_root: outputs/runs
+    data_root: /data/shyang/outputs
+
+  resources:
+    gpus_per_node: 8
+    cuda_visible_devices: "0,1,2,3,4,5,6,7"
+    nnodes: 1
+    node_rank: 0
+    master_addr: 127.0.0.1
+    master_port: 29500
+
+  outputs:
+    workspace_output_root: "outputs/analyses/{experiment}/"
+    data_output_root: "{data_root}/{project}/analyses/{experiment}/"
+
+  extra_config:
+    # Roots of the training runs these analyses consume. Point them at the run
+    # you want to analyse; every path below is derived from them.
+    paths:
+      physion_run: /data/shyang/outputs/awm/physionpp/awm_physionpp_fullpatch_probe_seed239
+      clevrer_run: /data/shyang/outputs/awm/clevrer/awm_clevrer_fullpatch_probe_seed239
+      ek100_run: /data/shyang/outputs/awm/ek100/awm_ek100_multiscale_adapter_seed239
+      physion_root: /data/ABDUCTIVE-WORLD/physion_v2/extracted
+      clevrer_root: /data/shared/datasets/CLEVRER
+      clevrer_config: configs/clevrer/awm_clevrer_fullpatch_probe_seed239/config.yaml
+      world_checkpoint: /data/shyang/outputs/vjepa2-baiz/vjepa2_naive/clevrer_vith_16to16_stride2_8gpu/best.pt
+      ek100_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+      ek100_video_root: /data/shared/datasets/EPIC-KITCHENS-processed_v1
+    protocol:
+      train_split: data_v1
+      readout_split: readout_data_v1
+      test_split: testdata_v1
+
+tasks:
+  # ------------------------------------------------------- state export (input)
+  extract_physion_train:
+    launch:
+      label: Export Entity/Dynamic/Relation features from the Physion++ train cache
+      module: src.studies.hasp_offline_analysis.extract_physion
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: extract_physion_train.log
+      pid_name: extract_physion_train.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --cache: "{cfg:launch.extra_config.paths.physion_run}/cache_train"
+        --checkpoint: "{cfg:launch.extra_config.paths.physion_run}/train_probe/best.pt"
+        --output: "{large_output_dir}"
+        --device: "cpu"
+
+  extract_physion_validation:
+    launch:
+      label: Export Entity/Dynamic/Relation features from the Physion++ readout cache
+      module: src.studies.hasp_offline_analysis.extract_physion
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: extract_physion_validation.log
+      pid_name: extract_physion_validation.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --cache: "{cfg:launch.extra_config.paths.physion_run}/cache_readout"
+        --checkpoint: "{cfg:launch.extra_config.paths.physion_run}/train_probe/best.pt"
+        --output: "{large_output_dir}"
+        --device: "cpu"
+
+  extract_ek100:
+    launch:
+      label: Export Entity/Dynamic/Relation features from the EK100 probe cache
+      module: src.studies.hasp_offline_analysis.extract_ek100
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: extract_ek100.log
+      pid_name: extract_ek100.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --cache: "{cfg:launch.extra_config.paths.ek100_run}/cache_probe_validation"
+        --readout: "{cfg:launch.extra_config.paths.ek100_run}/train_readout/best.pt"
+        --adapter: "{cfg:launch.extra_config.paths.ek100_run}/train_adapter/best.pt"
+        --output: "{large_output_dir}"
+        --device: "cpu"
+
+  # ------------------------------------------- information / factor decoding
+  physion_factor_probe:
+    launch:
+      label: Decode native Physion++ physical factors from each HASP level
+      module: src.studies.hasp_offline_analysis.physion_factor_probe
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: physion_factor_probe.log
+      pid_name: physion_factor_probe.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --train: "{data_experiment_root}/extract_physion_train"
+        --test: "{data_experiment_root}/extract_physion_validation"
+        --output: "{large_output_dir}/physion_native_factor_matrix.json"
+
+  physion_slot_time_probe:
+    launch:
+      label: Slot- and time-resolved Entity/Dynamic probe (Hungarian aligned)
+      module: src.studies.hasp_offline_analysis.physion_slot_time_probe
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: physion_slot_time_probe.log
+      pid_name: physion_slot_time_probe.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --train: "{data_experiment_root}/extract_physion_train"
+        --test: "{data_experiment_root}/extract_physion_validation"
+        --output: "{large_output_dir}/physion_slot_time_matrix.json"
+
+  physion_pair_probe:
+    launch:
+      label: Pair-level relation probe (distance / contact / time-to-contact)
+      module: src.studies.hasp_offline_analysis.physion_pair_probe
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: physion_pair_probe.log
+      pid_name: physion_pair_probe.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --train: "{data_experiment_root}/extract_physion_train"
+        --test: "{data_experiment_root}/extract_physion_validation"
+        --output: "{large_output_dir}/physion_pair_relation_matrix.json"
+
+  entity_specialization:
+    launch:
+      label: Object-level specialisation of the Entity state
+      module: src.studies.hasp_offline_analysis.entity_specialization
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: entity_specialization.log
+      pid_name: entity_specialization.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --features: "{data_experiment_root}/extract_physion_validation"
+        --output: "{large_output_dir}/entity_specialization.json"
+
+  probe_matrix:
+    launch:
+      label: Layer x factor probe matrix on the exported state features
+      module: src.studies.hasp_offline_analysis.probe_matrix
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: probe_matrix.log
+      pid_name: probe_matrix.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --features: "{data_experiment_root}/extract_physion_validation"
+        --task: "ocp"
+        --output: "{large_output_dir}/physion_ocp.json"
+
+  # ------------------------------------------------------ temporal / dynamic
+  physion_dynamic_selectivity:
+    launch:
+      label: Dynamic-state selectivity to state change and temporal order
+      module: src.studies.hasp_offline_analysis.physion_dynamic_selectivity
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: physion_dynamic_selectivity.log
+      pid_name: physion_dynamic_selectivity.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --train-features: "{data_experiment_root}/extract_physion_train"
+        --test-features: "{data_experiment_root}/extract_physion_validation"
+        --cache: "{cfg:launch.extra_config.paths.physion_run}/cache_readout"
+        --checkpoint: "{cfg:launch.extra_config.paths.physion_run}/train_probe/best.pt"
+        --output: "{large_output_dir}/physion_dynamic_selectivity.json"
+        --device: "cpu"
+
+  clevrer_dynamic_selectivity:
+    launch:
+      label: CLEVRER speed / acceleration / TTC / contact selectivity
+      module: src.studies.hasp_offline_analysis.clevrer_dynamic_selectivity
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: clevrer_dynamic_selectivity.log
+      pid_name: clevrer_dynamic_selectivity.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --train-latents: "{cfg:launch.extra_config.paths.clevrer_run}/cache_latents/train"
+        --validation-latents: "{cfg:launch.extra_config.paths.clevrer_run}/cache_latents/validation"
+        --train-targets: "{cfg:launch.extra_config.paths.clevrer_run}/prepare_targets_train/targets_train.pt"
+        --validation-targets: "{cfg:launch.extra_config.paths.clevrer_run}/prepare_targets_validation/targets_validation.pt"
+        --checkpoint: "{cfg:launch.extra_config.paths.clevrer_run}/train_probe/best.pt"
+        --output: "{large_output_dir}/clevrer_dynamic_selectivity.json"
+
+  # -------------------------------------------------------------- interventions
+  physion_input_ablation:
+    launch:
+      label: Input-evidence ablation (temporal variation removed)
+      module: src.studies.hasp_offline_analysis.physion_input_ablation
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: physion_input_ablation.log
+      pid_name: physion_input_ablation.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --cache: "{cfg:launch.extra_config.paths.physion_run}/cache_readout"
+        --checkpoint: "{cfg:launch.extra_config.paths.physion_run}/train_probe/best.pt"
+        --output: "{large_output_dir}/physion_input_ablation.json"
+
+  physion_predictor_regen_ablation:
+    launch:
+      label: Regenerate the predicted future from perturbed context patches
+      module: src.studies.hasp_offline_analysis.physion_predictor_regen_ablation
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: physion_predictor_regen_ablation.log
+      pid_name: physion_predictor_regen_ablation.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --cache: "{cfg:launch.extra_config.paths.physion_run}/cache_readout"
+        --probe: "{cfg:launch.extra_config.paths.physion_run}/train_probe/best.pt"
+        --predictor: "{cfg:launch.extra_config.paths.physion_run}/train_predictor/best.pt"
+        --predictor-config: "{cfg:launch.extra_config.paths.physion_run}/train_predictor/configs/train_predictor.resolved.yaml"
+        --output: "{large_output_dir}/physion_predictor_regen_ablation.json"
+
+  physion_relation_instance_ablation:
+    launch:
+      label: Relation instance selectivity (contact / non-contact / random pair)
+      module: src.studies.hasp_offline_analysis.physion_relation_instance_ablation
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: physion_relation_instance_ablation.log
+      pid_name: physion_relation_instance_ablation.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --cache: "{cfg:launch.extra_config.paths.physion_run}/cache_readout"
+        --probe: "{cfg:launch.extra_config.paths.physion_run}/train_probe/best.pt"
+        --predictor: "{cfg:launch.extra_config.paths.physion_run}/train_predictor/best.pt"
+        --predictor-config: "{cfg:launch.extra_config.paths.physion_run}/train_predictor/configs/train_predictor.resolved.yaml"
+        --output: "{large_output_dir}/physion_relation_instance_ablation.json"
+
+  clevrer_relation_instance_ablation:
+    launch:
+      label: CLEVRER relation instance selectivity
+      module: src.studies.hasp_offline_analysis.clevrer_relation_instance_ablation
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: clevrer_relation_instance_ablation.log
+      pid_name: clevrer_relation_instance_ablation.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --cache-root: "{cfg:launch.extra_config.paths.clevrer_run}/cache_latents"
+        --targets: "{cfg:launch.extra_config.paths.clevrer_run}/prepare_targets_validation/targets_validation.pt"
+        --probe: "{cfg:launch.extra_config.paths.clevrer_run}/train_probe/best.pt"
+        --world-checkpoint: "{cfg:launch.extra_config.paths.world_checkpoint}"
+        --config: "{cfg:launch.extra_config.paths.clevrer_config}"
+        --dataset-root: "{cfg:launch.extra_config.paths.clevrer_root}"
+        --output: "{large_output_dir}/clevrer_relation_instance_ablation.json"
+
+  # ---------------------------------------------------------------- rendering
+  visualize_ek100:
+    launch:
+      label: Render HASP action evidence traces for EK100
+      module: src.studies.hasp_offline_analysis.visualize_ek100
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: visualize_ek100.log
+      pid_name: visualize_ek100.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --cache: "{cfg:launch.extra_config.paths.ek100_run}/cache_probe_validation"
+        --readout: "{cfg:launch.extra_config.paths.ek100_run}/train_readout/best.pt"
+        --adapter: "{cfg:launch.extra_config.paths.ek100_run}/train_adapter/best.pt"
+        --annotations: "{cfg:launch.extra_config.paths.ek100_annotations}"
+        --video-root: "{cfg:launch.extra_config.paths.ek100_video_root}"
+        --output: "{large_output_dir}/traces"

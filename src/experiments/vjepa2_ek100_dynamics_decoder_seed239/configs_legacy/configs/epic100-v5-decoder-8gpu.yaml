@@ -1,0 +1,49 @@
+experiment:
+  meta:
+    seed: 239
+    dtype: bfloat16
+    pretrain_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+    encoder_checkpoint_key: target_encoder
+  model:
+    model_name: vit_huge
+    patch_size: 16
+    tubelet_size: 2
+    pred_depth: 12
+    pred_embed_dim: 384
+    pred_num_heads: 12
+    num_mask_tokens: 10
+    zero_init_mask_tokens: true
+    uniform_power: true
+    use_rope: true
+    use_sdpa: true
+    use_silu: false
+    use_pred_silu: false
+    wide_silu: true
+    use_activation_checkpointing: true
+  data:
+    dataset: epic100_visor
+    processed_root: /data/shared/datasets/EPIC-KITCHENS-processed_v1
+    visor_root: /data/shared/datasets/EPIC-KITCHENS-VISOR-processed_v1
+    train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+    validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+    crop_size: 256
+    clip_frames: 16
+    event_boundary: midpoint
+    minimum_sample_fps: 4.0
+decoder:
+  input_dim: 1280
+  hidden_dim: 256
+  num_heads: 8
+  ffn_dim: 1024
+  num_slots: 8
+  slot_depth: 1
+  transition_depth: 1
+  interaction_depth: 1
+  dropout: 0.1
+optimization:
+  seed: 239
+  epochs: 30
+  batch_size_per_gpu: 1
+  learning_rate: 0.0002
+  weight_decay: 0.04
+  event_weight: 1.0

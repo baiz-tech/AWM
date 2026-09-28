@@ -1,0 +1,273 @@
+# AWM on Physion++ — 16-frame context to 16-frame predicted future, full-patch
+# structured probe + OCP readout (paper table "main_results", Physion++ column).
+#
+# Protocol (fixed by the original experiment; do not change silently):
+#   data_v1          -> structured-probe training
+#   readout_data_v1  -> checkpoint/readout selection  (never tune on test)
+#   testdata_v1      -> final OCP evaluation
+#
+# Artifact layout (one directory per task, under the experiment root):
+#   train_predictor/     native V-JEPA 2 predictor: best.pt / latest.pt
+#   cache_train/         frozen latents for data_v1
+#   cache_readout/       frozen latents for readout_data_v1
+#   cache_test/          frozen latents for testdata_v1
+#   train_probe/         structured probe: best.pt / latest.pt
+#   eval_ocp/            OCP metrics
+#   eval_ocp_calibrated/ calibrated OCP metrics
+#
+# Task defaults live under `experiment.cli_defaults`: the module itself turns
+# them into argparse defaults (src/core/run_context.py), so a manual
+# `python -m ...` behaves the same. An explicit CLI argument always wins.
+#
+# Machine-specific paths are recorded in docs/manual/resource.md.
+
+launch:
+  run:
+    project: awm
+    dataset: physionpp
+    experiment: awm_physionpp_fullpatch_probe_seed239
+    stage: 0
+    workspace_root: outputs/runs
+    data_root: /data/shyang/outputs
+
+  resources:
+    gpus_per_node: 8
+    cuda_visible_devices: "0,1,2,3,4,5,6,7"
+    nnodes: 1
+    node_rank: 0
+    master_addr: 127.0.0.1
+    master_port: 29500
+
+  outputs:
+    workspace_output_root: "{workspace_root}/{dataset}/{experiment}/"
+    data_output_root: "{data_root}/{project}/{dataset}/{experiment}/"
+
+  extra_config:
+    paths:
+      physion_root: /data/ABDUCTIVE-WORLD/physion_v2/extracted
+      encoder_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+      encoder_checkpoint_key: target_encoder
+    protocol:
+      video_glob: "**/*_img.mp4"
+      train_split: data_v1
+      readout_split: readout_data_v1
+      test_split: testdata_v1
+      crop_size: 256
+      clip_frames: 16
+      current_frame_step: 2
+      future_frame_step: 4
+      clip_gap: 0
+
+tasks:
+  # ---------------------------------------------------------------- predictor
+  train_predictor:
+    launch:
+      label: Train the native V-JEPA 2 predictor (randomly initialised)
+      module: src.experiments.awm_physionpp_fullpatch_probe_seed239.train_predictor
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: train_predictor.log
+      pid_name: train_predictor.pid
+      resume:
+        checkpoint: null
+      config_template: src/experiments/awm_physionpp_fullpatch_probe_seed239/configs_legacy/predictor_config.yaml
+      config_overrides:
+        folder: "{large_output_dir}"
+        meta.seed: 239
+        meta.pretrain_checkpoint: "{cfg:launch.extra_config.paths.encoder_checkpoint}"
+        meta.encoder_checkpoint_key: "{cfg:launch.extra_config.paths.encoder_checkpoint_key}"
+        data.root: "{cfg:launch.extra_config.paths.physion_root}"
+        data.train_split: "{cfg:launch.extra_config.protocol.train_split}"
+        data.eval_split: "{cfg:launch.extra_config.protocol.readout_split}"
+        data.video_glob: "{cfg:launch.extra_config.protocol.video_glob}"
+        data.crop_size: 256
+        data.clip_frames: 16
+        data.current_frame_step: 2
+        data.future_frame_step: 4
+        data.clip_gap: 0
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --config: "{resolved_config}"
+
+  # ------------------------------------------------------------------- caches
+  # One task per split: the cache module takes a single --split, and train_probe
+  # consumes the train and validation caches separately.
+  cache_train:
+    launch:
+      label: Cache frozen latents for the structured-probe training split
+      module: src.experiments.awm_physionpp_fullpatch_probe_seed239.cache
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_train.log
+      pid_name: cache_train.pid
+      resume:
+        checkpoint: null
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --config: "{resolved_config}"
+        --split: "{cfg:launch.extra_config.protocol.train_split}"
+        --checkpoint: "{experiment_root}/train_predictor/best.pt"
+        --output-dir: "{large_output_dir}"
+      meta: &physionpp_meta
+        seed: 239
+        dtype: bfloat16
+        pretrain_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+        encoder_checkpoint_key: target_encoder
+      model: &physionpp_model
+        model_name: vit_huge
+        patch_size: 16
+        tubelet_size: 2
+        pred_depth: 12
+        pred_embed_dim: 384
+        pred_num_heads: 12
+        num_mask_tokens: 1
+        zero_init_mask_tokens: true
+        uniform_power: true
+        use_rope: true
+        use_sdpa: true
+        use_silu: false
+        use_pred_silu: false
+        wide_silu: true
+        use_activation_checkpointing: true
+      data: &physionpp_data
+        root: /data/ABDUCTIVE-WORLD/physion_v2/extracted
+        video_glob: "**/*_img.mp4"
+        crop_size: 256
+        clip_frames: 16
+        current_frame_step: 2
+        future_frame_step: 4
+        clip_gap: 0
+
+  cache_readout:
+    launch:
+      label: Cache frozen latents for readout selection (readout_data_v1)
+      module: src.experiments.awm_physionpp_fullpatch_probe_seed239.cache
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_readout.log
+      pid_name: cache_readout.pid
+      resume:
+        checkpoint: null
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --config: "{resolved_config}"
+        --split: "{cfg:launch.extra_config.protocol.readout_split}"
+        --checkpoint: "{experiment_root}/train_predictor/best.pt"
+        --output-dir: "{large_output_dir}"
+      meta: *physionpp_meta
+      model: *physionpp_model
+      data: *physionpp_data
+
+  cache_test:
+    launch:
+      label: Cache frozen latents for the final test split (testdata_v1)
+      module: src.experiments.awm_physionpp_fullpatch_probe_seed239.cache
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_test.log
+      pid_name: cache_test.pid
+      resume:
+        checkpoint: null
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --config: "{resolved_config}"
+        --split: "{cfg:launch.extra_config.protocol.test_split}"
+        --checkpoint: "{experiment_root}/train_predictor/best.pt"
+        --output-dir: "{large_output_dir}"
+      meta: *physionpp_meta
+      model: *physionpp_model
+      data: *physionpp_data
+
+  # --------------------------------------------------------- structured probe
+  train_probe:
+    launch:
+      label: Train the full-patch structured probe (Entity/Dynamic/Relation)
+      module: src.experiments.awm_physionpp_fullpatch_probe_seed239.train_probe
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: train_probe.log
+      pid_name: train_probe.pid
+      resume:
+        checkpoint: null
+      args: []
+    experiment:
+      seed: 239
+      epochs: 30
+      batch_size: 2
+      learning_rate: 0.0002
+      cli_defaults:
+        --train-cache: "{experiment_root}/cache_train"
+        --validation-cache: "{experiment_root}/cache_readout"
+        --output-dir: "{large_output_dir}"
+        --epochs: "30"
+        --batch-size: "2"
+        --learning-rate: "0.0002"
+        --seed: "{seed}"
+
+  # ------------------------------------------------------------------ readouts
+  eval_ocp:
+    launch:
+      label: Train the OCP readout and report AUROC / balanced accuracy / accuracy
+      module: src.experiments.awm_physionpp_fullpatch_probe_seed239.eval_ocp
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: eval_ocp.log
+      pid_name: eval_ocp.pid
+      resume:
+        checkpoint: null
+      args: []
+    experiment:
+      seed: 239
+      epochs: 300
+      learning_rate: 0.01
+      weight_decay: 0.001
+      cli_defaults:
+        --checkpoint: "{experiment_root}/train_probe/best.pt"
+        --readout-cache: "{experiment_root}/cache_readout"
+        --test-cache: "{experiment_root}/cache_test"
+        --output-dir: "{large_output_dir}"
+        --epochs: "300"
+        --learning-rate: "0.01"
+        --weight-decay: "0.001"
+        --seeds: "239"
+
+  eval_ocp_calibrated:
+    launch:
+      label: OCP evaluation with a calibrated decision threshold
+      module: src.experiments.awm_physionpp_fullpatch_probe_seed239.eval_ocp_calibrated
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: eval_ocp_calibrated.log
+      pid_name: eval_ocp_calibrated.pid
+      resume:
+        checkpoint: null
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --checkpoint: "{experiment_root}/train_probe/best.pt"
+        --validation-cache: "{experiment_root}/cache_readout"
+        --test-cache: "{experiment_root}/cache_test"
+        --output-dir: "{large_output_dir}"

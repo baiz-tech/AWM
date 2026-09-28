@@ -1,0 +1,12 @@
+protocol: orca_ek100_frozen_encoder_readout
+seed: 239
+checkpoint_dir: /data/shared_model/Orca-4B
+video_root: /data/shared/datasets/EPIC-KITCHENS-processed_v1
+train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+frames: 16
+prompt: Represent the observed action in this video.
+readout:
+  epochs: 100
+  learning_rate: 0.001
+  weight_decay: 0.0001

@@ -1,0 +1,323 @@
+# V-JEPA 2 baseline on Physion++ — v5 dynamics decoder + structured probe
+#
+# Canonical config (docs/manual/requirement.md section 4). The pre-migration
+# config is kept verbatim under
+#   src/experiments/vjepa2_physionpp_dynamics_decoder_seed239/configs_legacy/
+#
+# Machine-specific paths are recorded in docs/manual/resource.md.
+
+launch:
+  run:
+    project: awm
+    dataset: physionpp
+    experiment: vjepa2_physionpp_dynamics_decoder_seed239
+    stage: 0
+    workspace_root: outputs/runs
+    data_root: /data/shyang/outputs
+
+  resources:
+    gpus_per_node: 8
+    cuda_visible_devices: "0,1,2,3,4,5,6,7"
+    nnodes: 1
+    node_rank: 0
+    master_addr: 127.0.0.1
+    master_port: 29500
+
+  outputs:
+    workspace_output_root: "{workspace_root}/{dataset}/{experiment}/"
+    data_output_root: "{data_root}/{project}/{dataset}/{experiment}/"
+
+  extra_config:
+    paths:
+      physion_root: /data/ABDUCTIVE-WORLD/physion_v2/extracted
+      encoder_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+      # Native latent predictor used to produce the predicted future latent.
+      # Any checkpoint with protocol ``current_16_to_future_16`` trained on the
+      # Physion++ data_v1 split works; the AWM Physion++ experiment's
+      # ``train_predictor`` task writes exactly that artifact, and the matched
+      # V-JEPA 2 baseline shares the same native predictor module.
+      physion_predictor_checkpoint: /data/shyang/outputs/awm/physionpp/awm_physionpp_fullpatch_probe_seed239/train_predictor/best.pt
+      orca_root: /data/shared_model/Orca-4B
+      python_bin: /data/shared/envs/vjepa2-312/bin/python
+    protocol:
+      video_glob: "**/*_img.mp4"
+      train_split: data_v1
+      readout_split: readout_data_v1
+      test_split: testdata_v1
+      crop_size: 256
+      clip_frames: 16
+      current_frame_step: 2
+      future_frame_step: 4
+      clip_gap: 0
+
+tasks:
+  prepare_targets:
+    launch:
+      label: Build Physion++ segmentation/geometry targets
+      module: src.experiments.vjepa2_physionpp_dynamics_decoder_seed239.scripts.physionpp.prepare_targets
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: prepare_targets.log
+      pid_name: prepare_targets.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--dataset-root": "{cfg:launch.extra_config.paths.physion_root}"
+        "--split": "{cfg:launch.extra_config.protocol.train_split}"
+        "--output": "{large_output_dir}/targets_train.pt"
+      seed: 239
+
+  prepare_targets_validation:
+    launch:
+      label: Build Physion++ targets (readout split)
+      module: src.experiments.vjepa2_physionpp_dynamics_decoder_seed239.scripts.physionpp.prepare_targets
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: prepare_targets.log
+      pid_name: prepare_targets.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--dataset-root": "{cfg:launch.extra_config.paths.physion_root}"
+        "--split": "{cfg:launch.extra_config.protocol.readout_split}"
+        "--output": "{large_output_dir}/targets_validation.pt"
+      seed: 239
+
+  # ---------------------------------------------------------------- latents
+  # One task per split: the cache module takes a single --split. All three
+  # tasks write into the shared ``cache_latents/`` artifact root, because
+  # ``train_probe`` / ``train_ocp_*`` resolve latents as
+  # ``<cache-root>/<split>/<sha1>.pt``. This shared root is intentional.
+  #
+  # The cache module reads the pre-migration flat config layout
+  # (``experiment.meta`` / ``experiment.model`` / ``experiment.data``), so the
+  # task uses ``config_template`` plus machine-path overrides instead of the
+  # task-local ``experiment`` block.
+  cache_latents:
+    launch:
+      label: Cache frozen Physion++ latents (train split)
+      module: src.experiments.vjepa2_physionpp_dynamics_decoder_seed239.scripts.physionpp.cache_full_latents
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_full_latents.log
+      pid_name: cache_full_latents.pid
+      config_template: src/experiments/vjepa2_physionpp_dynamics_decoder_seed239/configs_legacy/configs/physionpp-fullpatch-structured-probe-v1-8gpu.yaml
+      config_overrides:
+        experiment.meta.seed: 239
+        experiment.meta.pretrain_checkpoint: "{cfg:launch.extra_config.paths.encoder_checkpoint}"
+        experiment.meta.encoder_checkpoint_key: target_encoder
+        experiment.data.root: "{cfg:launch.extra_config.paths.physion_root}"
+        experiment.data.video_glob: "{cfg:launch.extra_config.protocol.video_glob}"
+        experiment.data.crop_size: 256
+        experiment.data.clip_frames: 16
+        experiment.data.current_frame_step: 2
+        experiment.data.future_frame_step: 4
+        experiment.data.clip_gap: 0
+        # The template carries a stale relative predictor path; keep the resolved
+        # config consistent with the --predictor-checkpoint actually used.
+        predictor_checkpoint: "{cfg:launch.extra_config.paths.physion_predictor_checkpoint}"
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--predictor-checkpoint": "{cfg:launch.extra_config.paths.physion_predictor_checkpoint}"
+        "--split": "{cfg:launch.extra_config.protocol.train_split}"
+        "--output-dir": "{experiment_root}/cache_latents"
+      seed: 239
+
+  cache_latents_readout:
+    launch:
+      label: Cache frozen Physion++ latents (readout split)
+      module: src.experiments.vjepa2_physionpp_dynamics_decoder_seed239.scripts.physionpp.cache_full_latents
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_full_latents.log
+      pid_name: cache_full_latents.pid
+      config_template: src/experiments/vjepa2_physionpp_dynamics_decoder_seed239/configs_legacy/configs/physionpp-fullpatch-structured-probe-v1-8gpu.yaml
+      config_overrides:
+        experiment.meta.seed: 239
+        experiment.meta.pretrain_checkpoint: "{cfg:launch.extra_config.paths.encoder_checkpoint}"
+        experiment.meta.encoder_checkpoint_key: target_encoder
+        experiment.data.root: "{cfg:launch.extra_config.paths.physion_root}"
+        experiment.data.video_glob: "{cfg:launch.extra_config.protocol.video_glob}"
+        experiment.data.crop_size: 256
+        experiment.data.clip_frames: 16
+        experiment.data.current_frame_step: 2
+        experiment.data.future_frame_step: 4
+        experiment.data.clip_gap: 0
+        # The template carries a stale relative predictor path; keep the resolved
+        # config consistent with the --predictor-checkpoint actually used.
+        predictor_checkpoint: "{cfg:launch.extra_config.paths.physion_predictor_checkpoint}"
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--predictor-checkpoint": "{cfg:launch.extra_config.paths.physion_predictor_checkpoint}"
+        "--split": "{cfg:launch.extra_config.protocol.readout_split}"
+        "--output-dir": "{experiment_root}/cache_latents"
+      seed: 239
+
+  cache_latents_test:
+    launch:
+      label: Cache frozen Physion++ latents (test split)
+      module: src.experiments.vjepa2_physionpp_dynamics_decoder_seed239.scripts.physionpp.cache_full_latents
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_full_latents.log
+      pid_name: cache_full_latents.pid
+      config_template: src/experiments/vjepa2_physionpp_dynamics_decoder_seed239/configs_legacy/configs/physionpp-fullpatch-structured-probe-v1-8gpu.yaml
+      config_overrides:
+        experiment.meta.seed: 239
+        experiment.meta.pretrain_checkpoint: "{cfg:launch.extra_config.paths.encoder_checkpoint}"
+        experiment.meta.encoder_checkpoint_key: target_encoder
+        experiment.data.root: "{cfg:launch.extra_config.paths.physion_root}"
+        experiment.data.video_glob: "{cfg:launch.extra_config.protocol.video_glob}"
+        experiment.data.crop_size: 256
+        experiment.data.clip_frames: 16
+        experiment.data.current_frame_step: 2
+        experiment.data.future_frame_step: 4
+        experiment.data.clip_gap: 0
+        # The template carries a stale relative predictor path; keep the resolved
+        # config consistent with the --predictor-checkpoint actually used.
+        predictor_checkpoint: "{cfg:launch.extra_config.paths.physion_predictor_checkpoint}"
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--predictor-checkpoint": "{cfg:launch.extra_config.paths.physion_predictor_checkpoint}"
+        "--split": "{cfg:launch.extra_config.protocol.test_split}"
+        "--output-dir": "{experiment_root}/cache_latents"
+      seed: 239
+
+  train_probe:
+    launch:
+      label: Train the Physion++ dynamics decoder + probe
+      module: src.experiments.vjepa2_physionpp_dynamics_decoder_seed239.scripts.physionpp.train_structured_probe
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: train_structured_probe.log
+      pid_name: train_structured_probe.pid
+      resume:
+        checkpoint: null
+      args: []
+    experiment:
+      cli_defaults:
+        "--cache-root": "{experiment_root}/cache_latents"
+        "--train-targets": "{experiment_root}/prepare_targets/targets_train.pt"
+        "--validation-targets": "{experiment_root}/prepare_targets_validation/targets_validation.pt"
+        "--output-dir": "{large_output_dir}"
+      seed: 239
+
+  # ------------------------------------------------------- OCP baselines
+  # Three readout conditions are needed for the OCP table and for the
+  # intervention figure: the raw visual latents (visual only), the structured
+  # probe latents, and the visual + probe concatenation.
+  train_ocp_visual_only:
+    launch:
+      label: Train the visual-only OCP readout (context + predicted future)
+      module: src.experiments.vjepa2_physionpp_dynamics_decoder_seed239.scripts.physionpp.train_ocp_visual_only
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: train_ocp_visual_only.log
+      pid_name: train_ocp_visual_only.pid
+      resume:
+        checkpoint: null
+      args: []
+    experiment:
+      cli_defaults:
+        "--cache-root": "{experiment_root}/cache_latents"
+        "--train-targets": "{experiment_root}/prepare_targets/targets_train.pt"
+        "--validation-targets": "{experiment_root}/prepare_targets_validation/targets_validation.pt"
+        "--output-dir": "{large_output_dir}"
+        "--epochs": "20"
+        "--batch-size": "8"
+        "--seed": "{seed}"
+      seed: 239
+
+  train_ocp_readout:
+    launch:
+      label: Train the OCP readout on visual + structured-probe latents
+      module: src.experiments.vjepa2_physionpp_dynamics_decoder_seed239.scripts.physionpp.train_ocp_readout
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: train_ocp_readout.log
+      pid_name: train_ocp_readout.pid
+      resume:
+        checkpoint: null
+      args: []
+    experiment:
+      cli_defaults:
+        "--cache-root": "{experiment_root}/cache_latents"
+        "--train-targets": "{experiment_root}/prepare_targets/targets_train.pt"
+        "--validation-targets": "{experiment_root}/prepare_targets_validation/targets_validation.pt"
+        "--probe-checkpoint": "{experiment_root}/train_probe/best.pt"
+        "--output-dir": "{large_output_dir}"
+        "--epochs": "20"
+        "--batch-size": "8"
+        "--seed": "{seed}"
+      seed: 239
+
+  # ---------------------------------------------------- interpretability
+  # Slot correspondence / semantic readouts behind the appendix slot
+  # diagnostics table, and the OCP input-intervention figure.
+  evaluate_interpretability:
+    launch:
+      label: Evaluate slot correspondence and probe readouts
+      module: src.experiments.vjepa2_physionpp_dynamics_decoder_seed239.scripts.physionpp.evaluate_interpretability
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: evaluate_interpretability.log
+      pid_name: evaluate_interpretability.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--cache-root": "{experiment_root}/cache_latents"
+        "--targets": "{experiment_root}/prepare_targets_validation/targets_validation.pt"
+        "--split": "{cfg:launch.extra_config.protocol.readout_split}"
+        "--checkpoint": "{experiment_root}/train_probe/best.pt"
+        "--output": "{large_output_dir}/interpretability.json"
+        "--model-kind": "full"
+        "--batch-size": "8"
+      seed: 239
+
+  evaluate_ocp_interventions:
+    launch:
+      label: Evaluate OCP under structured-probe input interventions
+      module: src.experiments.vjepa2_physionpp_dynamics_decoder_seed239.scripts.physionpp.evaluate_ocp_interventions
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: evaluate_ocp_interventions.log
+      pid_name: evaluate_ocp_interventions.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--cache-root": "{experiment_root}/cache_latents"
+        "--targets": "{experiment_root}/prepare_targets_validation/targets_validation.pt"
+        "--split": "{cfg:launch.extra_config.protocol.readout_split}"
+        "--probe-checkpoint": "{experiment_root}/train_probe/best.pt"
+        "--visual-checkpoint": "{experiment_root}/train_ocp_visual_only/best.pt"
+        "--visual-probe-checkpoint": "{experiment_root}/train_ocp_readout/best.pt"
+        "--output": "{large_output_dir}/ocp_interventions.json"
+        "--seed": "{seed}"
+      seed: 239
+

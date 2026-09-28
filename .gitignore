@@ -1,0 +1,52 @@
+# ---- experiment output -------------------------------------------------------
+outputs/
+!outputs/.gitkeep
+.runtime/
+!/.runtime/.gitkeep
+temp/
+*.pid
+*.exitcode
+*.status.json
+
+# ---- python ------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# ---- experiment artifacts ----------------------------------------------------
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.npz
+*.npy
+*.h5
+*.hdf5
+*.mp4
+*.avi
+*.mov
+*.log
+*.jsonl
+metrics.json
+tensorboard/
+wandb/
+checkpoints/
+
+# ---- local environment -------------------------------------------------------
+.env
+.venv/
+venv/
+*.swp
+
+# ---- OS ----------------------------------------------------------------------
+.DS_Store
+Thumbs.db

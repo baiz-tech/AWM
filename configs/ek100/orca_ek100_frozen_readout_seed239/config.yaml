@@ -1,0 +1,129 @@
+# Orca baseline on EK100 — frozen encoder with a light attentive readout (paper Table main_results, row 'Orca')
+#
+# Canonical config (docs/manual/requirement.md section 4). The pre-migration
+# config is kept verbatim under
+#   src/experiments/orca_ek100_frozen_readout_seed239/configs_legacy/
+#
+# Machine-specific paths are recorded in docs/manual/resource.md.
+#
+# NOTE: Orca-4B weights are not present on every machine.
+
+launch:
+  run:
+    project: awm
+    dataset: ek100
+    experiment: orca_ek100_frozen_readout_seed239
+    stage: 0
+    workspace_root: outputs/runs
+    data_root: /data/shyang/outputs
+
+  resources:
+    gpus_per_node: 8
+    cuda_visible_devices: "0,1,2,3,4,5,6,7"
+    nnodes: 1
+    node_rank: 0
+    master_addr: 127.0.0.1
+    master_port: 29500
+
+  outputs:
+    workspace_output_root: "{workspace_root}/{dataset}/{experiment}/"
+    data_output_root: "{data_root}/{project}/{dataset}/{experiment}/"
+
+  extra_config:
+    paths:
+      processed_root: /data/shared/datasets/EPIC-KITCHENS-processed_v1
+      visor_root: /data/shared/datasets/EPIC-KITCHENS-VISOR-processed_v1
+      train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+      validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+      encoder_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+      orca_root: /data/shared_model/Orca-4B
+      python_bin: /data/shared/envs/vjepa2-312/bin/python
+    protocol:
+      crop_size: 256
+      clip_frames: 16
+      event_boundary: midpoint
+      minimum_sample_fps: 4.0
+
+tasks:
+  cache_latents_train:
+    launch:
+      label: Cache frozen Orca latents (train)
+      module: src.experiments.orca_ek100_frozen_readout_seed239.cache_latents
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_latents.log
+      pid_name: cache_latents.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--video-root": "{cfg:launch.extra_config.paths.processed_root}"
+        "--annotations": "{cfg:launch.extra_config.paths.train_annotations}"
+        "--split": "train"
+        "--output-dir": "{experiment_root}/cache_latents"
+        "--checkpoint-dir": "{cfg:launch.extra_config.paths.orca_root}"
+      model:
+        name: Orca-4B
+        input_size: 224
+        clip_frames: 16
+      data:
+        video_root: /data/shared/datasets/EPIC-KITCHENS-processed_v1
+        train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+        validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+        crop_size: 224
+
+  cache_latents_validation:
+    launch:
+      label: Cache frozen Orca latents (validation)
+      module: src.experiments.orca_ek100_frozen_readout_seed239.cache_latents
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_latents.log
+      pid_name: cache_latents.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--video-root": "{cfg:launch.extra_config.paths.processed_root}"
+        "--annotations": "{cfg:launch.extra_config.paths.validation_annotations}"
+        "--split": "validation"
+        "--output-dir": "{experiment_root}/cache_latents"
+        "--checkpoint-dir": "{cfg:launch.extra_config.paths.orca_root}"
+      model:
+        name: Orca-4B
+        input_size: 224
+        clip_frames: 16
+      data:
+        video_root: /data/shared/datasets/EPIC-KITCHENS-processed_v1
+        train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+        validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+        crop_size: 224
+
+  train_readout:
+    launch:
+      label: Train the Orca attentive readout
+      module: src.experiments.orca_ek100_frozen_readout_seed239.train_readout
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: train_readout.log
+      pid_name: train_readout.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--cache-root": "{experiment_root}/cache_latents"
+        "--output-dir": "{large_output_dir}"
+        "--seed": "{seed}"
+      model:
+        name: Orca-4B
+        input_size: 224
+        clip_frames: 16
+      data:
+        video_root: /data/shared/datasets/EPIC-KITCHENS-processed_v1
+        train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+        validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+        crop_size: 224
+

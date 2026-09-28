@@ -1,0 +1,51 @@
+launch: {}
+tasks:
+  single_future_all_future_ocp:
+    launch:
+      name: single_future_all_future_ocp
+      module: src.shared.evaluate.physionpp.eval_single_future_all_future_ocp
+      distributed: true
+      output_scope: evaluation
+      log_name: eval.log
+      pid_name: eval.pid
+      label: One-clip prediction with all-Future OCP label
+      mirror_data_to_workspace: true
+      args:
+      - --eval-config
+      - '{config}'
+      - --config
+      - '{workspace_run_dir}/config.yaml'
+      - --checkpoint
+      - '{checkpoint}'
+      - --output-dir
+      - '{data_output_dir}'
+      training_config: src/experiments/vjepa2_clevrer_naive_world_model_seed239/configs/physionpp/physion-vith-16to16-8gpu.yaml
+      checkpoint:
+        base: workspace_run_dir
+        path: best.pt
+      launcher:
+        gpus: 8
+        cuda_visible_devices: 0,1,2,3,4,5,6,7
+        master_addr: 127.0.0.1
+        master_port: 37170
+    experiment:
+      evaluation:
+        world_model_adapter: src.experiments.vjepa2_clevrer_naive_world_model_seed239.world_model_adapter
+        label_scope: all_future
+        seed: 239
+        batch_size: 1
+        num_workers: 4
+        max_readout_videos: null
+        max_test_videos: null
+        readout_epochs: 300
+        readout_lr: 0.0003
+        readout_weight_decay: 0.001
+        probe_validation_fraction: 0.25
+        probe_variants:
+        - full
+        - current
+        - predicted_future
+        - delta
+        readout_device: same
+        progress_every_batches: 10
+        readout_log_every_epochs: 50

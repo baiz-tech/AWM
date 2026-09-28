@@ -1,0 +1,132 @@
+# Orca baseline on Physion++ — frozen encoder, ground-truth future (paper Table main_results, row 'Orca')
+#
+# Canonical config (docs/manual/requirement.md section 4). The pre-migration
+# config is kept verbatim under
+#   src/experiments/orca_physionpp_oracle_ocp_seed239/configs_legacy/
+#
+# Machine-specific paths are recorded in docs/manual/resource.md.
+#
+# Orca ships no predictive module, so the ground-truth future video is
+# encoded instead of a predicted future. This is the substitution the
+# paper describes, and it is why the Physion++ column is comparable while
+# the CLEVRER column is not reported for Orca.
+#
+# NOTE: Orca-4B weights are not present on every machine.
+
+launch:
+  run:
+    project: awm
+    dataset: physionpp
+    experiment: orca_physionpp_oracle_ocp_seed239
+    stage: 0
+    workspace_root: outputs/runs
+    data_root: /data/shyang/outputs
+
+  resources:
+    gpus_per_node: 8
+    cuda_visible_devices: "0,1,2,3,4,5,6,7"
+    nnodes: 1
+    node_rank: 0
+    master_addr: 127.0.0.1
+    master_port: 29500
+
+  outputs:
+    workspace_output_root: "{workspace_root}/{dataset}/{experiment}/"
+    data_output_root: "{data_root}/{project}/{dataset}/{experiment}/"
+
+  extra_config:
+    paths:
+      physion_root: /data/ABDUCTIVE-WORLD/physion_v2/extracted
+      encoder_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+      orca_root: /data/shared_model/Orca-4B
+      python_bin: /data/shared/envs/vjepa2-312/bin/python
+    protocol:
+      video_glob: "**/*_img.mp4"
+      train_split: data_v1
+      readout_split: readout_data_v1
+      test_split: testdata_v1
+      crop_size: 256
+      clip_frames: 16
+      current_frame_step: 2
+      future_frame_step: 4
+      clip_gap: 0
+
+tasks:
+  cache_train:
+    launch:
+      label: Cache data_v1 latents
+      module: src.experiments.orca_physionpp_oracle_ocp_seed239.cache_latents
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_latents.log
+      pid_name: cache_latents.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--physion-root": "{cfg:launch.extra_config.paths.physion_root}"
+        "--checkpoint-dir": "{cfg:launch.extra_config.paths.orca_root}"
+        "--split": "data_v1"
+        "--output-dir": "{experiment_root}/cache"
+      seed: 239
+
+  cache_readout:
+    launch:
+      label: Cache readout_data_v1 latents
+      module: src.experiments.orca_physionpp_oracle_ocp_seed239.cache_latents
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_latents.log
+      pid_name: cache_latents.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--physion-root": "{cfg:launch.extra_config.paths.physion_root}"
+        "--checkpoint-dir": "{cfg:launch.extra_config.paths.orca_root}"
+        "--split": "readout_data_v1"
+        "--output-dir": "{experiment_root}/cache"
+      seed: 239
+
+  cache_test:
+    launch:
+      label: Cache testdata_v1 latents
+      module: src.experiments.orca_physionpp_oracle_ocp_seed239.cache_latents
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_latents.log
+      pid_name: cache_latents.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--physion-root": "{cfg:launch.extra_config.paths.physion_root}"
+        "--checkpoint-dir": "{cfg:launch.extra_config.paths.orca_root}"
+        "--split": "testdata_v1"
+        "--output-dir": "{experiment_root}/cache"
+      seed: 239
+
+  train_ocp:
+    launch:
+      label: Train the linear OCP readout on Orca features
+      module: src.experiments.orca_physionpp_oracle_ocp_seed239.train_ocp
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: train_ocp.log
+      pid_name: train_ocp.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--cache-root": "{experiment_root}/cache"
+        "--output-dir": "{large_output_dir}"
+        "--epochs": "300"
+        "--lr": "0.01"
+        "--weight-decay": "0.001"
+        "--seed": "{seed}"
+      seed: 239
+

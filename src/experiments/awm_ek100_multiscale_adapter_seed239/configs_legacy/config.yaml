@@ -1,0 +1,41 @@
+protocol: v23_style_ek100_only
+seed: 239
+data:
+  video_root: /data/shared/datasets/EPIC-KITCHENS-processed_v1
+  train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+  validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+  crop_size: 256
+  clip_frames: 16
+  num_workers: 4
+weights:
+  encoder: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+  encoder_key: target_encoder
+  native_predictor: null
+  predictor_init: random
+training:
+  cache_grid_size: 8
+  readout_epochs: 30
+  readout_batch_size: 256
+  readout_learning_rate: 0.001
+  adapter_epochs: 12
+  adapter_batch_size: 8
+  adapter_learning_rate: 0.0001
+  weight_decay: 0.0001
+output:
+  root: /data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v23_ek100_only
+predictor_model:
+  model_name: vit_huge
+  patch_size: 16
+  tubelet_size: 2
+  pred_depth: 12
+  pred_embed_dim: 384
+  pred_num_heads: 12
+  num_mask_tokens: 1
+  zero_init_mask_tokens: true
+  uniform_power: true
+  use_rope: true
+  use_sdpa: true
+  use_silu: false
+  use_pred_silu: false
+  wide_silu: true
+  use_activation_checkpointing: true

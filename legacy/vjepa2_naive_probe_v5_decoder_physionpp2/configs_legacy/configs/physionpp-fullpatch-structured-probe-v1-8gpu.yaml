@@ -1,0 +1,39 @@
+experiment:
+  meta:
+    seed: 239
+    dtype: bfloat16
+    pretrain_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+    encoder_checkpoint_key: target_encoder
+  model:
+    model_name: vit_huge
+    patch_size: 16
+    tubelet_size: 2
+    pred_depth: 12
+    pred_embed_dim: 384
+    pred_num_heads: 12
+    num_mask_tokens: 1
+    zero_init_mask_tokens: true
+    uniform_power: true
+    use_rope: true
+    use_sdpa: true
+    use_silu: false
+    use_pred_silu: false
+    wide_silu: true
+    use_activation_checkpointing: true
+  data:
+    dataset: physionpp
+    root: /data/ABDUCTIVE-WORLD/physion_v2/extracted
+    video_glob: '**/*_img.mp4'
+    crop_size: 256
+    clip_frames: 16
+    sampling_mode: prediction_start
+    current_frame_step: 2
+    future_frame_step: 4
+    clip_gap: 0
+predictor_checkpoint: outputs/runs/vjepa2_naive/physion_vith_native_predictor_16to16_8gpu/best.pt
+probe:
+  hidden_dim: 256
+  num_heads: 8
+  num_slots: 8
+  ffn_dim: 1024
+  seed: 239

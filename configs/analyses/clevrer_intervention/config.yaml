@@ -1,0 +1,102 @@
+# CLEVRER probe-mask QA intervention — the producer of the paper table
+# `query_intervention`.
+#
+# The world model, structured probe and QA head all stay frozen. This analysis
+# exports the formal predictive-QA latent trajectory for each CLEVRER scene and
+# then re-runs the frozen QA head with (a) the baseline probe readout,
+# (b) the question-relevant object slot masked, and (c) an irrelevant object
+# slot masked.
+#
+# Paper mapping:
+#   export_predictive_latents + eval_validation_probe_mask_qa -> query_intervention
+#     (`metrics.{baseline,relevant_mask,irrelevant_mask}` question/option
+#      accuracy on the CLEVRER validation predictive questions)
+#
+# Output root follows AGENTS.md section 7: cross-run analysis lives in
+# outputs/analyses/<analysis_name>/, so `workspace_output_root` is overridden.
+
+launch:
+  run:
+    project: awm
+    dataset: analyses
+    experiment: clevrer_intervention
+    stage: 0
+    workspace_root: outputs/runs
+    data_root: /data/shyang/outputs
+
+  resources:
+    gpus_per_node: 8
+    cuda_visible_devices: "0,1,2,3,4,5,6,7"
+    nnodes: 1
+    node_rank: 0
+    master_addr: 127.0.0.1
+    master_port: 29651
+
+  outputs:
+    workspace_output_root: "outputs/analyses/{experiment}/"
+    data_output_root: "{data_root}/{project}/analyses/{experiment}/"
+
+  extra_config:
+    paths:
+      # Root of the AWM CLEVRER training run this analysis consumes.
+      clevrer_run: /data/shyang/outputs/awm/clevrer/awm_clevrer_fullpatch_probe_seed239
+      clevrer_root: /data/shared/datasets/CLEVRER
+      clevrer_annotations: /data/shared/datasets/CLEVRER/official_code/executor/data
+      # Canonical AWM CLEVRER config; the exporter reads its shared
+      # `tasks.train.experiment` world-model block through
+      # `merged_task_experiment(..., "qa_eval")`.
+      clevrer_config: configs/clevrer/awm_clevrer_fullpatch_probe_seed239/config.yaml
+      world_checkpoint: /data/shyang/outputs/vjepa2-baiz/vjepa2_naive/clevrer_vith_16to16_stride2_8gpu/best.pt
+
+tasks:
+  # ------------------------------------------------------------------ export
+  # Formal predictive-QA latents: observed steps are raw frames 96,100,...,124
+  # and the imagined steps are produced by the frozen predictor. No future RGB
+  # frame is read.
+  export_predictive_latents:
+    launch:
+      label: Export formal CLEVRER predictive-QA latent trajectories
+      module: src.studies.clevrer_intervention.export_predictive_latents
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: export_predictive_latents.log
+      pid_name: export_predictive_latents.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --split: "all"
+        --config: "{cfg:launch.extra_config.paths.clevrer_config}"
+        --checkpoint: "{cfg:launch.extra_config.paths.world_checkpoint}"
+        --video-root: "{cfg:launch.extra_config.paths.clevrer_root}/videos"
+        --output-root: "{large_output_dir}"
+        --device: "cuda:0"
+        --batch-size: "1"
+        --num-workers: "2"
+
+  # -------------------------------------------------------------- intervention
+  # The QA checkpoint is the one written by the AWM CLEVRER `qa_eval` task.
+  eval_validation_probe_mask_qa:
+    launch:
+      label: Evaluate baseline / relevant-mask / irrelevant-mask QA accuracy
+      module: src.studies.clevrer_intervention.eval_validation_probe_mask_qa
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: eval_validation_probe_mask_qa.log
+      pid_name: eval_validation_probe_mask_qa.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --annotations: "{cfg:launch.extra_config.paths.clevrer_annotations}"
+        --trajectory-root: "{experiment_root}/export_predictive_latents"
+        --video-root: "{cfg:launch.extra_config.paths.clevrer_root}/videos/val"
+        --probe-checkpoint: "{cfg:launch.extra_config.paths.clevrer_run}/train_probe/best.pt"
+        --qa-checkpoint: "{cfg:launch.extra_config.paths.clevrer_run}/qa_eval/qa_checkpoints/current_future/best.pt"
+        --output: "{large_output_dir}/validation_probe_mask_qa.json"
+        --device: "cuda:0"
+        --seed: "{seed}"

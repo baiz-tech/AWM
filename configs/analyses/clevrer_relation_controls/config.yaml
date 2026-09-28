@@ -1,0 +1,98 @@
+# CLEVRER relation controls — the component ablation behind the paper figure
+# `fig:relation-component` (interaction_prediction).
+#
+# The frozen CLEVRER decoder/probe artifacts are read from the AWM CLEVRER run;
+# only small linear readouts over representation subsets are fitted here, so
+# nothing in this config trains or modifies a world model.
+#
+# Paper mapping:
+#   extract_shards + merge_shards -> Figure interaction_prediction
+#     (Contact AUROC and TTC MAE for Entity / Dynamic / Relation-only /
+#      Entity+Dynamic / Entity+Relation / Dynamic+Relation / Full)
+#
+# Output root follows AGENTS.md section 7: cross-run analysis lives in
+# outputs/analyses/<analysis_name>/, so `workspace_output_root` is overridden.
+
+launch:
+  run:
+    project: awm
+    dataset: analyses
+    experiment: clevrer_relation_controls
+    stage: 0
+    workspace_root: outputs/runs
+    data_root: /data/shyang/outputs
+
+  resources:
+    gpus_per_node: 8
+    cuda_visible_devices: "0,1,2,3,4,5,6,7"
+    nnodes: 1
+    node_rank: 0
+    master_addr: 127.0.0.1
+    master_port: 29641
+
+  outputs:
+    workspace_output_root: "outputs/analyses/{experiment}/"
+    data_output_root: "{data_root}/{project}/analyses/{experiment}/"
+
+  extra_config:
+    paths:
+      # Root of the AWM CLEVRER training run this analysis consumes.
+      clevrer_run: /data/shyang/outputs/awm/clevrer/awm_clevrer_fullpatch_probe_seed239
+
+tasks:
+  # ------------------------------------------------------------------ extract
+  # Eight-way sharded feature extraction over the frozen decoder. The module
+  # writes one train/validation shard pair per rank and returns; `merge_shards`
+  # then fits the readouts on the merged rows.
+  extract_shards:
+    launch:
+      label: Export frozen Entity/Dynamic/Relation pair features (8 shards)
+      module: src.studies.clevrer_relation_controls.run
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: extract_shards.log
+      pid_name: extract_shards.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --train-latents: "{cfg:launch.extra_config.paths.clevrer_run}/cache_latents/train"
+        --validation-latents: "{cfg:launch.extra_config.paths.clevrer_run}/cache_latents/validation"
+        --train-targets: "{cfg:launch.extra_config.paths.clevrer_run}/prepare_targets_train/targets_train.pt"
+        --validation-targets: "{cfg:launch.extra_config.paths.clevrer_run}/prepare_targets_validation/targets_validation.pt"
+        --checkpoint: "{cfg:launch.extra_config.paths.clevrer_run}/train_probe/best.pt"
+        --device: "cuda:0"
+        --output: "{large_output_dir}/metrics.json"
+        --shard-output: "{large_output_dir}/shards"
+        --world-size: "{nproc}"
+
+  # -------------------------------------------------------------------- merge
+  # Single-process merge + readout fitting. Reads the shard directory written
+  # by `extract_shards`, which is why it is addressed through experiment_root
+  # rather than through this task's own large_output_dir.
+  merge_shards:
+    launch:
+      label: Fit Entity/Dynamic/Relation readouts on the merged shards
+      module: src.studies.clevrer_relation_controls.run
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: merge_shards.log
+      pid_name: merge_shards.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --train-latents: "{cfg:launch.extra_config.paths.clevrer_run}/cache_latents/train"
+        --validation-latents: "{cfg:launch.extra_config.paths.clevrer_run}/cache_latents/validation"
+        --train-targets: "{cfg:launch.extra_config.paths.clevrer_run}/prepare_targets_train/targets_train.pt"
+        --validation-targets: "{cfg:launch.extra_config.paths.clevrer_run}/prepare_targets_validation/targets_validation.pt"
+        --checkpoint: "{cfg:launch.extra_config.paths.clevrer_run}/train_probe/best.pt"
+        --device: "cuda:0"
+        --output: "{large_output_dir}/metrics.json"
+        --shard-output: "{experiment_root}/extract_shards/shards"
+        --world-size: "{nproc}"
+        --merge-shards: "true"

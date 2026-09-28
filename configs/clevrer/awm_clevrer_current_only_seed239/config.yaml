@@ -1,0 +1,215 @@
+# AWM on CLEVRER — current-latent-only predictability control
+#
+# Canonical config (docs/manual/requirement.md section 4). The pre-migration
+# config is kept verbatim under
+#   src/experiments/awm_clevrer_current_only_seed239/configs_legacy/
+#
+# Machine-specific paths are recorded in docs/manual/resource.md.
+#
+# Trains the same decoder from the current latent only (no predicted
+# future) to separate the contribution of the predicted future.
+
+launch:
+  run:
+    project: awm
+    dataset: clevrer
+    experiment: awm_clevrer_current_only_seed239
+    stage: 0
+    workspace_root: outputs/runs
+    data_root: /data/shyang/outputs
+
+  resources:
+    gpus_per_node: 8
+    cuda_visible_devices: "0,1,2,3,4,5,6,7"
+    nnodes: 1
+    node_rank: 0
+    master_addr: 127.0.0.1
+    master_port: 29500
+
+  outputs:
+    workspace_output_root: "{workspace_root}/{dataset}/{experiment}/"
+    data_output_root: "{data_root}/{project}/{dataset}/{experiment}/"
+
+  extra_config:
+    paths:
+      clevrer_root: /data/shared/datasets/CLEVRER
+      clevrer_annotations: /data/shared/datasets/CLEVRER/official_code/executor/data
+      encoder_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+      world_checkpoint: /data/shyang/outputs/vjepa2-baiz/vjepa2_naive/clevrer_vith_16to16_stride2_8gpu/best.pt
+      python_bin: /data/shared/envs/vjepa2-312/bin/python
+    protocol:
+      video_glob: "*.mp4"
+      crop_size: 256
+      clip_frames: 16
+      current_frame_step: 2
+      future_frame_step: 2
+      clip_gap: 0
+      window_starts: "0,32,64"
+      future_step: 2
+      score_threshold: 0.5
+
+tasks:
+  train:
+    experiment:
+      meta:
+        seed: 239
+        dtype: bfloat16
+        pretrain_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+        encoder_checkpoint_key: target_encoder
+      model:
+        model_name: vit_huge
+        patch_size: 16
+        tubelet_size: 2
+        pred_depth: 12
+        pred_embed_dim: 384
+        pred_num_heads: 12
+        num_mask_tokens: 1
+        zero_init_mask_tokens: true
+        uniform_power: true
+        use_rope: true
+        use_sdpa: true
+        use_silu: false
+        use_pred_silu: false
+        wide_silu: true
+        use_activation_checkpointing: true
+      data:
+        dataset: clevrer
+        root: /data/shared/datasets/CLEVRER
+        train_split: train
+        eval_split: validation
+        video_glob: "*.mp4"
+        crop_size: 256
+        clip_frames: 16
+        current_frame_step: 2
+        future_frame_step: 2
+        clip_gap: 0
+        pin_mem: true
+        persistent_workers: true
+      window_starts: [0, 32, 64]
+  prepare_targets_train:
+    launch:
+      label: Build CLEVRER targets (train)
+      module: src.experiments.awm_clevrer_current_only_seed239.prepare_targets
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: prepare_targets.log
+      pid_name: prepare_targets.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--dataset-root": "{cfg:launch.extra_config.paths.clevrer_root}"
+        "--split": "train"
+        "--output": "{large_output_dir}/targets_train.pt"
+        "--window-starts": "{cfg:launch.extra_config.protocol.window_starts}"
+        "--future-step": "{cfg:launch.extra_config.protocol.future_step}"
+        "--score-threshold": "{cfg:launch.extra_config.protocol.score_threshold}"
+      seed: 239
+
+  prepare_targets_validation:
+    launch:
+      label: Build CLEVRER targets (validation)
+      module: src.experiments.awm_clevrer_current_only_seed239.prepare_targets
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: prepare_targets.log
+      pid_name: prepare_targets.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--dataset-root": "{cfg:launch.extra_config.paths.clevrer_root}"
+        "--split": "validation"
+        "--output": "{large_output_dir}/targets_validation.pt"
+        "--window-starts": "{cfg:launch.extra_config.protocol.window_starts}"
+        "--future-step": "{cfg:launch.extra_config.protocol.future_step}"
+        "--score-threshold": "{cfg:launch.extra_config.protocol.score_threshold}"
+      seed: 239
+
+  cache_latents_train:
+    launch:
+      label: Cache frozen latents (train)
+      module: src.experiments.awm_clevrer_current_only_seed239.cache_latents
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_latents.log
+      pid_name: cache_latents.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--split": "train"
+        "--checkpoint": "{cfg:launch.extra_config.paths.world_checkpoint}"
+        "--output-dir": "{experiment_root}/cache_latents"
+        "--window-starts": "{cfg:launch.extra_config.protocol.window_starts}"
+      seed: 239
+
+  cache_latents_validation:
+    launch:
+      label: Cache frozen latents (validation)
+      module: src.experiments.awm_clevrer_current_only_seed239.cache_latents
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_latents.log
+      pid_name: cache_latents.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--split": "validation"
+        "--checkpoint": "{cfg:launch.extra_config.paths.world_checkpoint}"
+        "--output-dir": "{experiment_root}/cache_latents"
+        "--window-starts": "{cfg:launch.extra_config.protocol.window_starts}"
+      seed: 239
+
+  train_probe:
+    launch:
+      label: Train the current-only structured probe
+      module: src.experiments.awm_clevrer_current_only_seed239.train_probe
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: train_probe.log
+      pid_name: train_probe.pid
+      resume:
+        checkpoint: null
+      args: []
+    experiment:
+      cli_defaults:
+        "--cache-root": "{experiment_root}/cache_latents"
+        "--train-targets": "{experiment_root}/prepare_targets_train/targets_train.pt"
+        "--validation-targets": "{experiment_root}/prepare_targets_validation/targets_validation.pt"
+        "--output-dir": "{large_output_dir}"
+        "--epochs": "30"
+        "--batch-size": "1"
+        "--num-workers": "2"
+        "--seed": "{seed}"
+      seed: 239
+
+  eval_probe:
+    launch:
+      label: Evaluate the current-only probe
+      module: src.experiments.awm_clevrer_current_only_seed239.eval_probe
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: eval_probe.log
+      pid_name: eval_probe.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--cache-root": "{experiment_root}/cache_latents"
+        "--targets": "{experiment_root}/prepare_targets_validation/targets_validation.pt"
+        "--checkpoint": "{experiment_root}/train_probe/best.pt"
+        "--output-dir": "{large_output_dir}"
+        "--batch-size": "4"
+      seed: 239
+

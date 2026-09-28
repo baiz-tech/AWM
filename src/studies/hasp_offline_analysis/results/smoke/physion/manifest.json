@@ -1,0 +1,334 @@
+{
+  "protocol": "hasp_physion_offline_features_v1",
+  "count": 64,
+  "features": [
+    "entity",
+    "dynamic",
+    "relation",
+    "full"
+  ],
+  "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation",
+  "probe": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/probe/best.pt",
+  "rows": [
+    {
+      "index": 0,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000000.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=bowl/0000_img.mp4"
+    },
+    {
+      "index": 1,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000001.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=bowl/0001_img.mp4"
+    },
+    {
+      "index": 2,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000002.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=bowl/0002_img.mp4"
+    },
+    {
+      "index": 3,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000003.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=bowl/0003_img.mp4"
+    },
+    {
+      "index": 4,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000004.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=bowl/0004_img.mp4"
+    },
+    {
+      "index": 5,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000005.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=bowl/0005_img.mp4"
+    },
+    {
+      "index": 6,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000006.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=cone/0000_img.mp4"
+    },
+    {
+      "index": 7,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000007.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=cone/0001_img.mp4"
+    },
+    {
+      "index": 8,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000008.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=cone/0002_img.mp4"
+    },
+    {
+      "index": 9,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000009.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=cone/0003_img.mp4"
+    },
+    {
+      "index": 10,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000010.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=cone/0004_img.mp4"
+    },
+    {
+      "index": 11,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000011.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=cube/0000_img.mp4"
+    },
+    {
+      "index": 12,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000012.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=cube/0001_img.mp4"
+    },
+    {
+      "index": 13,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000013.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=cube/0002_img.mp4"
+    },
+    {
+      "index": 14,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000014.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=cube/0003_img.mp4"
+    },
+    {
+      "index": 15,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000015.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=cube/0004_img.mp4"
+    },
+    {
+      "index": 16,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000016.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=cylinder/0000_img.mp4"
+    },
+    {
+      "index": 17,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000017.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=cylinder/0001_img.mp4"
+    },
+    {
+      "index": 18,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000018.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=cylinder/0002_img.mp4"
+    },
+    {
+      "index": 19,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000019.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=cylinder/0003_img.mp4"
+    },
+    {
+      "index": 20,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000020.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=cylinder/0004_img.mp4"
+    },
+    {
+      "index": 21,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000021.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=dumbbell/0000_img.mp4"
+    },
+    {
+      "index": 22,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000022.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=dumbbell/0001_img.mp4"
+    },
+    {
+      "index": 23,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000023.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=dumbbell/0002_img.mp4"
+    },
+    {
+      "index": 24,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000024.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=dumbbell/0003_img.mp4"
+    },
+    {
+      "index": 25,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000025.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=dumbbell/0004_img.mp4"
+    },
+    {
+      "index": 26,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000026.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=pentagon/0000_img.mp4"
+    },
+    {
+      "index": 27,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000027.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=pentagon/0001_img.mp4"
+    },
+    {
+      "index": 28,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000028.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=pentagon/0002_img.mp4"
+    },
+    {
+      "index": 29,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000029.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=pentagon/0003_img.mp4"
+    },
+    {
+      "index": 30,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000030.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=pentagon/0004_img.mp4"
+    },
+    {
+      "index": 31,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000031.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=pipe/0000_img.mp4"
+    },
+    {
+      "index": 32,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000032.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=pipe/0001_img.mp4"
+    },
+    {
+      "index": 33,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000033.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=pipe/0002_img.mp4"
+    },
+    {
+      "index": 34,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000034.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=pipe/0003_img.mp4"
+    },
+    {
+      "index": 35,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000035.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=pipe/0004_img.mp4"
+    },
+    {
+      "index": 36,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000036.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=pyramid/0000_img.mp4"
+    },
+    {
+      "index": 37,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000037.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=pyramid/0001_img.mp4"
+    },
+    {
+      "index": 38,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000038.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=pyramid/0002_img.mp4"
+    },
+    {
+      "index": 39,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000039.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=pyramid/0003_img.mp4"
+    },
+    {
+      "index": 40,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000040.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=0-target=pyramid/0004_img.mp4"
+    },
+    {
+      "index": 41,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000041.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=bowl/0000_img.mp4"
+    },
+    {
+      "index": 42,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000042.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=bowl/0001_img.mp4"
+    },
+    {
+      "index": 43,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000043.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=bowl/0002_img.mp4"
+    },
+    {
+      "index": 44,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000044.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=bowl/0003_img.mp4"
+    },
+    {
+      "index": 45,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000045.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=bowl/0004_img.mp4"
+    },
+    {
+      "index": 46,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000046.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cone/0000_img.mp4"
+    },
+    {
+      "index": 47,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000047.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cone/0001_img.mp4"
+    },
+    {
+      "index": 48,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000048.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cone/0002_img.mp4"
+    },
+    {
+      "index": 49,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000049.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cone/0003_img.mp4"
+    },
+    {
+      "index": 50,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000050.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cone/0004_img.mp4"
+    },
+    {
+      "index": 51,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000051.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cone/0005_img.mp4"
+    },
+    {
+      "index": 52,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000052.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cone/0006_img.mp4"
+    },
+    {
+      "index": 53,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000053.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cone/0007_img.mp4"
+    },
+    {
+      "index": 54,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000054.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cone/0008_img.mp4"
+    },
+    {
+      "index": 55,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000055.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cube/0000_img.mp4"
+    },
+    {
+      "index": 56,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000056.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cube/0001_img.mp4"
+    },
+    {
+      "index": 57,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000057.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cube/0002_img.mp4"
+    },
+    {
+      "index": 58,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000058.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cube/0003_img.mp4"
+    },
+    {
+      "index": 59,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000059.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cube/0004_img.mp4"
+    },
+    {
+      "index": 60,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000060.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cylinder/0000_img.mp4"
+    },
+    {
+      "index": 61,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000061.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cylinder/0001_img.mp4"
+    },
+    {
+      "index": 62,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000062.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cylinder/0002_img.mp4"
+    },
+    {
+      "index": 63,
+      "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_parallel_v12/cache/validation/sample_000063.pt",
+      "path": "/data/ABDUCTIVE-WORLD/physion_v2/extracted/readout_data_v1/bouncy_platform_pp/bouncy_platform-use_blocker_with_hole=1-target=cylinder/0003_img.mp4"
+    }
+  ]
+}

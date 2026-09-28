@@ -1,0 +1,286 @@
+# VideoMAE v2 baseline on EK100 — encoder fine-tuned (paper Table main_results, row 'VideoMAE v2')
+#
+# Canonical config (docs/manual/requirement.md section 4). The pre-migration
+# config is kept verbatim under
+#   src/experiments/videomae2_ek100_finetune_seed239/configs_legacy/
+#
+# Machine-specific paths are recorded in docs/manual/resource.md.
+#
+# Unlike Orca, the VideoMAE v2 encoder is fine-tuned together with the
+# verb / noun / action heads.
+#
+# NOTE: the EK100 data root is not present on every machine.
+#
+# NOTE: the encoder is built from the upstream OpenGVLab/VideoMAEv2 checkout
+# named by ``model.official_repo`` (``models/modeling_finetune.py``); that
+# repository is not vendored. Clone it next to the vendored V-JEPA 2 checkout,
+# e.g. ``git clone https://github.com/OpenGVLab/VideoMAEv2 external/VideoMAEv2``,
+# and point ``model.official_repo`` / ``model.checkpoint`` at your copy. The
+# loader fails loudly when either path is missing.
+
+launch:
+  run:
+    project: awm
+    dataset: ek100
+    experiment: videomae2_ek100_finetune_seed239
+    stage: 0
+    workspace_root: outputs/runs
+    data_root: /data/shyang/outputs
+
+  resources:
+    gpus_per_node: 8
+    cuda_visible_devices: "0,1,2,3,4,5,6,7"
+    nnodes: 1
+    node_rank: 0
+    master_addr: 127.0.0.1
+    master_port: 29500
+
+  outputs:
+    workspace_output_root: "{workspace_root}/{dataset}/{experiment}/"
+    data_output_root: "{data_root}/{project}/{dataset}/{experiment}/"
+
+  extra_config:
+    paths:
+      processed_root: /data/shared/datasets/EPIC-KITCHENS-processed_v1
+      visor_root: /data/shared/datasets/EPIC-KITCHENS-VISOR-processed_v1
+      train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+      validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+      encoder_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+      orca_root: /data/shared_model/Orca-4B
+      python_bin: /data/shared/envs/vjepa2-312/bin/python
+    protocol:
+      crop_size: 256
+      clip_frames: 16
+      event_boundary: midpoint
+      minimum_sample_fps: 4.0
+
+tasks:
+  prepare_indices_train:
+    launch:
+      label: Build EK100 index files (train)
+      module: src.experiments.videomae2_ek100_finetune_seed239.prepare_indices
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: prepare_indices.log
+      pid_name: prepare_indices.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--annotations": "{cfg:launch.extra_config.paths.train_annotations}"
+        "--output": "{large_output_dir}/indices.json"
+        "--seed": "{seed}"
+      seed: 239
+
+  prepare_indices_validation:
+    launch:
+      label: Build EK100 index files (validation)
+      module: src.experiments.videomae2_ek100_finetune_seed239.prepare_indices
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: prepare_indices.log
+      pid_name: prepare_indices.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--annotations": "{cfg:launch.extra_config.paths.validation_annotations}"
+        "--output": "{large_output_dir}/indices.json"
+        "--seed": "{seed}"
+      seed: 239
+
+  cache_features:
+    launch:
+      label: Cache VideoMAE v2 features (train split)
+      module: src.experiments.videomae2_ek100_finetune_seed239.cache_features
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_features.log
+      pid_name: cache_features.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--annotations": "{cfg:launch.extra_config.paths.train_annotations}"
+        "--indices": "{experiment_root}/prepare_indices_train/indices.json"
+        "--split": "train"
+        "--output": "{large_output_dir}"
+      model:
+        checkpoint: /data/shared/models/videomae-v2/distill/vit_b_k710_dl_from_giant.pth
+        official_repo: external/VideoMAEv2
+        architecture: vit_b
+        freeze_encoder: true
+        all_frames: 16
+        tubelet_size: 2
+        input_size: 224
+        clip_frames: 16
+        current_frame_step: 2
+        future_frame_step: 4
+      data:
+        video_root: /data/shared/datasets/EPIC-KITCHENS-processed_v1
+        train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+        validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+        crop_size: 224
+        num_workers: 4
+      training:
+        learning_rate: 0.0001
+        weight_decay: 0.001
+
+  cache_features_probe_validation:
+    launch:
+      label: Cache VideoMAE v2 features (held-out probe validation split)
+      module: src.experiments.videomae2_ek100_finetune_seed239.cache_features
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_features_probe_validation.log
+      pid_name: cache_features_probe_validation.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--annotations": "{cfg:launch.extra_config.paths.train_annotations}"
+        "--indices": "{experiment_root}/prepare_indices_train/indices.json"
+        "--split": "probe_validation"
+        "--output": "{large_output_dir}"
+      model:
+        checkpoint: /data/shared/models/videomae-v2/distill/vit_b_k710_dl_from_giant.pth
+        official_repo: external/VideoMAEv2
+        architecture: vit_b
+        freeze_encoder: true
+        all_frames: 16
+        tubelet_size: 2
+        input_size: 224
+        clip_frames: 16
+        current_frame_step: 2
+        future_frame_step: 4
+      data:
+        video_root: /data/shared/datasets/EPIC-KITCHENS-processed_v1
+        train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+        validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+        crop_size: 224
+        num_workers: 4
+      training:
+        learning_rate: 0.0001
+        weight_decay: 0.001
+
+  cache_features_final_validation:
+    launch:
+      label: Cache VideoMAE v2 features (final validation split)
+      module: src.experiments.videomae2_ek100_finetune_seed239.cache_features
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: cache_features_final_validation.log
+      pid_name: cache_features_final_validation.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--annotations": "{cfg:launch.extra_config.paths.validation_annotations}"
+        "--split": "final_validation"
+        "--output": "{large_output_dir}"
+      model:
+        checkpoint: /data/shared/models/videomae-v2/distill/vit_b_k710_dl_from_giant.pth
+        official_repo: external/VideoMAEv2
+        architecture: vit_b
+        freeze_encoder: true
+        all_frames: 16
+        tubelet_size: 2
+        input_size: 224
+        clip_frames: 16
+        current_frame_step: 2
+        future_frame_step: 4
+      data:
+        video_root: /data/shared/datasets/EPIC-KITCHENS-processed_v1
+        train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+        validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+        crop_size: 224
+        num_workers: 4
+      training:
+        learning_rate: 0.0001
+        weight_decay: 0.001
+
+  train:
+    launch:
+      label: Train EK100 heads on cached features
+      module: src.experiments.videomae2_ek100_finetune_seed239.train
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: train.log
+      pid_name: train.pid
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--train": "{experiment_root}/cache_features"
+        "--validation": "{experiment_root}/cache_features_probe_validation"
+        "--final": "{experiment_root}/cache_features_final_validation"
+        "--output": "{large_output_dir}"
+      model:
+        checkpoint: /data/shared/models/videomae-v2/distill/vit_b_k710_dl_from_giant.pth
+        official_repo: external/VideoMAEv2
+        architecture: vit_b
+        freeze_encoder: false
+        all_frames: 16
+        tubelet_size: 2
+        input_size: 224
+        clip_frames: 16
+        current_frame_step: 2
+        future_frame_step: 4
+      data:
+        video_root: /data/shared/datasets/EPIC-KITCHENS-processed_v1
+        train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+        validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+        crop_size: 224
+        num_workers: 4
+      training:
+        learning_rate: 0.0001
+        weight_decay: 0.001
+
+  finetune:
+    launch:
+      label: Fine-tune the VideoMAE v2 encoder end to end
+      module: src.experiments.videomae2_ek100_finetune_seed239.finetune_ddp
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: finetune_ddp.log
+      pid_name: finetune_ddp.pid
+      resume:
+        checkpoint: null
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+        "--output": "{large_output_dir}"
+      model:
+        checkpoint: /data/shared/models/videomae-v2/distill/vit_b_k710_dl_from_giant.pth
+        official_repo: external/VideoMAEv2
+        architecture: vit_b
+        freeze_encoder: false
+        all_frames: 16
+        tubelet_size: 2
+        input_size: 224
+        clip_frames: 16
+        current_frame_step: 2
+        future_frame_step: 4
+      data:
+        video_root: /data/shared/datasets/EPIC-KITCHENS-processed_v1
+        train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+        validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+        crop_size: 224
+        num_workers: 4
+      training:
+        learning_rate: 0.0001
+        weight_decay: 0.001
+

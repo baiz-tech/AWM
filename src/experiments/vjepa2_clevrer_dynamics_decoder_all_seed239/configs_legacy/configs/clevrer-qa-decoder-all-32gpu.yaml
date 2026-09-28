@@ -1,0 +1,35 @@
+folder: /data/shared/shyang/outputs/vjepa2-baiz/vjepa2_naive_probe_v5_decoder_clevrerAll/clevrer_qa_decoder_all
+meta:
+  seed: 239
+  dtype: bfloat16
+qa:
+  backend: native_aloe
+  decoder_scene_root: /data/shared/shyang/outputs/vjepa2-baiz/vjepa2_naive_probe_v5_decoder_clevrerAll/clevrer_qa_decoder_all/scene_outputs
+  annotation_root: /data/shared/shared/datasets/CLEVRER/official_code/executor/data
+  question_types: [descriptive, explanatory, predictive, counterfactual]
+  use_probe_tokens: true
+  probe_token_mode: structured_supervised_sequence_v2
+  probe_hidden_dim: 256
+  structured_time_steps: 32
+  max_question_len: 20
+  max_choice_len: 12
+  max_visual_tokens: 16
+  n_sample_frames: 16
+  learned_tokens_per_step: 16
+  input_dim: 16
+  num_layers: 12
+  num_heads: 8
+  ffn_dim: 512
+  cls_mlp_size: 128
+  dropout: 0.1
+  train_batch_size: 16
+  val_batch_size: 32
+  num_workers: 2
+  min_token_frequency: 1
+  epochs: 400
+  learning_rate: 0.001
+  weight_decay: 0.0
+  grad_clip: 1.0
+  video_len: 128
+  temporal:
+    predictive_window: false

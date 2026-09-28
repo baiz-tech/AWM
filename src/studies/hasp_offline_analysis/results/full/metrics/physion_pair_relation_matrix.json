@@ -1,0 +1,29 @@
+{
+  "protocol": "physion_pair_relation_probe_v1",
+  "train_samples": 8000,
+  "test_samples": 800,
+  "static_pair": {
+    "distance": {
+      "mae": 0.03693029284477234,
+      "r2": 0.5424774289131165
+    },
+    "contact": {
+      "accuracy": 0.9595925211906433,
+      "auroc": 0.9846671223640442
+    },
+    "time_to_contact": {
+      "mae": 0.048723552376031876,
+      "r2": 0.5541793704032898
+    }
+  },
+  "time_pair": {
+    "distance": {
+      "mae": 0.03609282895922661,
+      "r2": 0.5814864635467529
+    },
+    "contact": {
+      "accuracy": 0.9535083174705505,
+      "auroc": 0.9789126515388489
+    }
+  }
+}

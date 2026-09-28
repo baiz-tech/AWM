@@ -1,0 +1,181 @@
+# V-JEPA 2 matched baseline on CLEVRER — naive world model (paper Table main_results, row 'V-JEPA 2')
+#
+# Canonical config (docs/manual/requirement.md section 4). The pre-migration
+# config is kept verbatim under
+#   src/experiments/vjepa2_clevrer_naive_world_model_seed239/configs_legacy/
+#
+# Machine-specific paths are recorded in docs/manual/resource.md.
+#
+# Trains the V-JEPA 2 native predictor on CLEVRER. The resulting
+# best.pt is the frozen world model consumed by the CLEVRER QA pipeline
+# and by the AWM CLEVRER experiments.
+
+launch:
+  run:
+    project: awm
+    dataset: clevrer
+    experiment: vjepa2_clevrer_naive_world_model_seed239
+    stage: 0
+    workspace_root: outputs/runs
+    data_root: /data/shyang/outputs
+
+  resources:
+    gpus_per_node: 8
+    cuda_visible_devices: "0,1,2,3,4,5,6,7"
+    nnodes: 1
+    node_rank: 0
+    master_addr: 127.0.0.1
+    master_port: 29500
+
+  outputs:
+    workspace_output_root: "{workspace_root}/{dataset}/{experiment}/"
+    data_output_root: "{data_root}/{project}/{dataset}/{experiment}/"
+
+  extra_config:
+    paths:
+      clevrer_root: /data/shared/datasets/CLEVRER
+      clevrer_annotations: /data/shared/datasets/CLEVRER/official_code/executor/data
+      encoder_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+      world_checkpoint: /data/shyang/outputs/vjepa2-baiz/vjepa2_naive/clevrer_vith_16to16_stride2_8gpu/best.pt
+      python_bin: /data/shared/envs/vjepa2-312/bin/python
+    protocol:
+      video_glob: "*.mp4"
+      crop_size: 256
+      clip_frames: 16
+      current_frame_step: 2
+      future_frame_step: 2
+      clip_gap: 0
+      window_starts: "0,32,64"
+      future_step: 2
+      score_threshold: 0.5
+
+tasks:
+  train:
+    launch:
+      label: Train the V-JEPA 2 native predictor on CLEVRER
+      module: src.experiments.vjepa2_clevrer_naive_world_model_seed239.train
+      distributed: true
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: train.log
+      pid_name: train.pid
+      resume:
+        checkpoint: null
+      args: []
+    experiment:
+      cli_defaults:
+        "--config": "{resolved_config}"
+      meta:
+        seed: 239
+        dtype: bfloat16
+        pretrain_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+        encoder_checkpoint_key: target_encoder
+      model:
+        model_name: vit_huge
+        patch_size: 16
+        tubelet_size: 2
+        pred_depth: 12
+        pred_embed_dim: 384
+        pred_num_heads: 12
+        num_mask_tokens: 1
+        zero_init_mask_tokens: true
+        uniform_power: true
+        use_rope: true
+        use_sdpa: true
+        use_silu: false
+        use_pred_silu: false
+        wide_silu: true
+        use_activation_checkpointing: true
+      data:
+        dataset: clevrer
+        root: /data/shared/datasets/CLEVRER
+        train_split: train
+        eval_split: validation
+        video_glob: "*.mp4"
+        crop_size: 256
+        clip_frames: 16
+        current_frame_step: 2
+        future_frame_step: 2
+        clip_gap: 0
+        pin_mem: true
+        persistent_workers: true
+      window_starts: [0, 32, 64]
+
+
+  # ------------------------------------------------------------- QA baseline
+  # Paper Table main_results, row 'V-JEPA 2' (CLEVRER): option / question
+  # accuracy of the frozen QA head on top of the naive world model. This is the
+  # matched no-probe counterpart of the AWM CLEVRER `qa_eval` task: the QA head
+  # sees only the global tokens, so `use_probe_tokens` stays false and no probe
+  # adapter or probe checkpoint is configured.
+  qa_eval:
+    launch:
+      label: CLEVRER predictive-QA pipeline (option and question accuracy)
+      module: src.data.clevrer.qa_pipeline
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: true
+      log_name: qa_eval.log
+      pid_name: qa_eval.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --config: "{config}"
+        --workspace-run-dir: "{workspace_experiment_root}"
+        --data-run-dir: "{data_experiment_root}"
+        --workspace-output-dir: "{workspace_experiment_root}/qa_eval"
+        --data-output-dir: "{data_experiment_root}/qa_eval"
+        --world-checkpoint: "{experiment_root}/train/best.pt"
+        --base-port: "{master_port}"
+        --master-addr: "{master_addr}"
+        --num-gpus: "{nproc}"
+        --python-bin: "{cfg:launch.extra_config.paths.python_bin}"
+        --output-mode: "{cfg:tasks.qa_eval.launch.output_mode}"
+      evaluation:
+        world_model_adapter: src.experiments.vjepa2_clevrer_naive_world_model_seed239.world_model_adapter
+      qa:
+        backend: native_aloe
+        protocol: compatibility_stride2
+        data:
+          token_source: online
+          future_generation: rollout
+        representation:
+          type: global_tokens
+          layout: BTND
+          num_slots: 4
+          feature_dim: 1280
+        temporal:
+          trajectory_length: 80
+          frame_offset: 5
+          predictive_window: true
+        annotation_root: /data/shared/datasets/CLEVRER/official_code/executor/data
+        question_types: [predictive]
+        skip_existing_trajectories: true
+        learned_tokens_per_step: 16
+        use_probe_tokens: false
+        export_batch_size: 2
+        export_num_workers: 4
+        video_len: 128
+        n_sample_frames: 16
+        max_n_objects: 7
+        max_visual_tokens: 16
+        max_question_len: 20
+        max_choice_len: 12
+        scene_batch_size: 96
+        train_batch_size: 16
+        val_batch_size: 32
+        num_workers: 4
+        min_token_frequency: 1
+        input_dim: 16
+        num_layers: 12
+        num_heads: 8
+        ffn_dim: 512
+        cls_mlp_size: 128
+        dropout: 0.1
+        epochs: 400
+        learning_rate: 0.001
+        weight_decay: 0.0
+        grad_clip: 1.0

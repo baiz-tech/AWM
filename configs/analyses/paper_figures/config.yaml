@@ -1,0 +1,64 @@
+# Paper figure rendering — turns recorded analysis metrics into the two
+# data-driven paper figures.
+#
+# This analysis trains nothing and touches no checkpoint: it only reads the JSON
+# written by the upstream experiments and renders a PDF.
+#
+# Paper mapping:
+#   render_all -> Figure entity_intervention (fig:entity-intervention)
+#                 Figure interaction_prediction (fig:relation-component)
+#
+# The two remaining paper figures are not data-driven and are therefore NOT
+# produced here: `Ilustration_awm.pdf` is the architecture diagram and the four
+# `entity_grounding_*.pdf` files are qualitative video-frame visualisations.
+#
+# Requires matplotlib (`requirements.txt`). Without it the renderer fails with an
+# explicit ImportError instead of writing an empty file.
+
+launch:
+  run:
+    project: awm
+    dataset: analyses
+    experiment: paper_figures
+    stage: 0
+    workspace_root: outputs/runs
+    data_root: /data/shyang/outputs
+
+  resources:
+    gpus_per_node: 1
+    cuda_visible_devices: "0"
+    nnodes: 1
+    node_rank: 0
+    master_addr: 127.0.0.1
+    master_port: 29500
+
+  outputs:
+    workspace_output_root: "outputs/analyses/{experiment}/"
+    data_output_root: "{data_root}/{project}/analyses/{experiment}/"
+
+  extra_config:
+    paths:
+      # Upstream artifacts. `ocp_interventions.json` is written by the Physion++
+      # V-JEPA 2 experiment's `evaluate_ocp_interventions` task; `metrics.json`
+      # is written by this repository's `clevrer_relation_controls` analysis.
+      physion_ocp_interventions: /data/shyang/outputs/awm/physionpp/vjepa2_physionpp_dynamics_decoder_seed239/evaluate_ocp_interventions/ocp_interventions.json
+      clevrer_relation_controls_metrics: /data/shyang/outputs/awm/analyses/clevrer_relation_controls/merge_shards/metrics.json
+
+tasks:
+  render_all:
+    launch:
+      label: Render the data-driven paper figures (entity intervention, interaction prediction)
+      module: src.studies.paper_figures.render_all
+      distributed: false
+      output_mode: both
+      existing_output: archive
+      background: false
+      log_name: render_all.log
+      pid_name: render_all.pid
+      args: []
+    experiment:
+      seed: 239
+      cli_defaults:
+        --entity-intervention-metrics: "{cfg:launch.extra_config.paths.physion_ocp_interventions}"
+        --interaction-metrics: "{cfg:launch.extra_config.paths.clevrer_relation_controls_metrics}"
+        --output-dir: "{large_output_dir}"

@@ -1,0 +1,178 @@
+# example_config.yaml
+#
+# 说明：
+# - 本文件仅展示标准 config 结构。
+# - 真实机器路径、节点 IP、网卡、conda 环境等写在 resource.md。
+# - 多阶段实验时，每个 stage 使用独立 yaml，例如 stage_1.yaml、stage_2.yaml，
+#   并修改 launch.run.stage。
+# - launcher CLI 可覆盖部分 launch 行为，例如：
+#     --output-mode
+#     --existing-output
+#     --background
+#     --resume
+
+launch:
+  run:
+    project: example_project
+    dataset: example_dataset
+    experiment: example_experiment
+
+    # 单阶段填 0。
+    # 多阶段分别填 1、2、3...
+    stage: 0
+
+    workspace_root: /path/to/workspace
+    data_root: /path/to/data
+
+  resources:
+    # 每个节点启动多少个 GPU worker。
+    gpus_per_node: 8
+
+    # 可选；不设置时继承当前环境中的 CUDA_VISIBLE_DEVICES。
+    cuda_visible_devices: "0,1,2,3,4,5,6,7"
+
+    # 以下为默认值。
+    # 多节点运行时 launcher 应允许环境变量覆盖：
+    #   NNODES
+    #   NODE_RANK
+    #   MASTER_ADDR
+    #   MASTER_PORT
+    #   NPROC_PER_NODE
+    #   CUDA_VISIBLE_DEVICES
+    nnodes: 1
+    node_rank: 0
+    master_addr: 127.0.0.1
+    master_port: 29500
+
+  outputs:
+    # experiment 级输出根目录。
+    #
+    # 单阶段：
+    #   <workspace_output_root>/<task>/
+    #   <data_output_root>/<task>/
+    #
+    # 多阶段：
+    #   <workspace_output_root>/stage_<N>/<task>/
+    #   <data_output_root>/stage_<N>/<task>/
+    workspace_output_root: "{workspace_root}/{project}/outputs/{dataset}/{experiment}/"
+    data_output_root: "{data_root}/{project}/{dataset}/{experiment}/"
+
+  extra_config: {}
+
+
+tasks:
+  train:
+    launch:
+      label: Training
+
+      # 必须能够通过：
+      #   python -m src.<train_module>
+      # 启动。
+      module: src.<train_module>
+
+      # true: launcher 使用 torchrun。
+      # false: launcher 直接使用 python -m <module>。
+      distributed: true
+
+      # workspace | data | both
+      #
+      # workspace:
+      #   LARGE_DATA_OUTPUT_DIR = workspace task dir
+      #   LIGHT_DATA_OUTPUT_DIR = workspace task dir
+      #
+      # data:
+      #   LARGE_DATA_OUTPUT_DIR = data task dir
+      #   LIGHT_DATA_OUTPUT_DIR = data task dir
+      #
+      # both:
+      #   LARGE_DATA_OUTPUT_DIR = data task dir
+      #   LIGHT_DATA_OUTPUT_DIR = data task dir
+      #   workspace 侧轻量文件由 launcher 负责同步。
+      output_mode: workspace
+
+      # archive | delete | raise
+      existing_output: archive
+
+      # false: 前台运行，launcher 等待任务结束。
+      # true: 后台运行，由 launcher 负责 nohup / pid / status。
+      background: false
+
+      log_name: train.log
+      pid_name: train.pid
+
+      # 是否真正 resume 由 CLI --resume 控制。
+      #
+      # checkpoint 显式配置时优先使用；
+      # 为 null 时，--resume 按顺序查找：
+      #   <LARGE_DATA_OUTPUT_DIR>/checkpoints/latest.pt
+      #   <LARGE_DATA_OUTPUT_DIR>/checkpoints/best.pt
+      resume:
+        checkpoint: null
+
+      # 固定追加给 task module 的参数。
+      # launcher 会统一处理 config / task / output / resume 等运行参数。
+      args: []
+
+    experiment:
+      seed: 42
+      epochs: 100
+      batch_size: 64
+      learning_rate: 0.0001
+
+      optimizer:
+        name: adamw
+        weight_decay: 0.01
+
+      checkpoint:
+        save_best: true
+        save_latest: true
+
+
+  eval:
+    launch:
+      label: Evaluation
+      module: src.<eval_module>
+
+      # 单进程 eval 可设为 false。
+      distributed: false
+
+      output_mode: workspace
+      existing_output: archive
+      background: false
+
+      log_name: eval.log
+      pid_name: eval.pid
+
+      # 如需 resume / 自动 checkpoint 解析，可保留该字段；
+      # 不需要时也可以省略整个 resume。
+      resume:
+        checkpoint: null
+
+      args: []
+
+    experiment:
+      split: test
+      batch_size: 64
+
+
+  preprocess:
+    launch:
+      label: Preprocessing
+      module: src.<preprocess_module>
+      distributed: false
+
+      output_mode: data
+      existing_output: archive
+
+      # 示例：预处理任务可以后台运行。
+      background: true
+
+      log_name: preprocess.log
+      pid_name: preprocess.pid
+
+      # preprocess 通常没有 checkpoint / resume 需求，因此省略 resume。
+      args: []
+
+    experiment:
+      num_workers: 16
+      overwrite: false

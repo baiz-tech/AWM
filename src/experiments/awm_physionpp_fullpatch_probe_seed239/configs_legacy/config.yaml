@@ -1,0 +1,28 @@
+protocol: v12_fullpatch_physion_only
+seed: 239
+data:
+  root: /data/ABDUCTIVE-WORLD/physion_v2/extracted
+  video_glob: "**/*_img.mp4"
+  train_split: data_v1
+  readout_split: readout_data_v1
+  test_split: testdata_v1
+  clip_frames: 16
+  current_frame_step: 2
+  future_frame_step: 4
+  clip_gap: 0
+  crop_size: 256
+  num_workers: 2
+weights:
+  encoder: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+  encoder_key: target_encoder
+  native_predictor: null
+  predictor_init: random
+training:
+  probe_epochs: 30
+  probe_batch_size: 2
+  probe_learning_rate: 0.0002
+  readout_epochs: 300
+  readout_learning_rate: 0.01
+  readout_weight_decay: 0.001
+output:
+  root: /data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only

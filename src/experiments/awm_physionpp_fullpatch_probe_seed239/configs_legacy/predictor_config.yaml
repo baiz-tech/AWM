@@ -1,0 +1,53 @@
+folder: /data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v12_physion_only/seed239_fresh/predictor
+meta:
+  seed: 239
+  dtype: bfloat16
+  pretrain_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+  encoder_checkpoint_key: target_encoder
+  save_every_freq: 5
+model:
+  model_name: vit_huge
+  patch_size: 16
+  tubelet_size: 2
+  pred_depth: 12
+  pred_embed_dim: 384
+  pred_num_heads: 12
+  num_mask_tokens: 1
+  zero_init_mask_tokens: true
+  uniform_power: true
+  use_rope: true
+  use_sdpa: true
+  use_silu: false
+  use_pred_silu: false
+  wide_silu: true
+  use_activation_checkpointing: true
+data:
+  root: /data/ABDUCTIVE-WORLD/physion_v2/extracted
+  train_split: data_v1
+  eval_split: readout_data_v1
+  video_glob: "**/*_img.mp4"
+  crop_size: 256
+  clip_frames: 16
+  sampling_mode: prediction_start
+  current_frame_step: 2
+  future_frame_step: 4
+  clip_gap: 0
+  batch_size: 2
+  eval_batch_size: 2
+  num_workers: 2
+  pin_mem: true
+  persistent_workers: false
+data_aug:
+  horizontal_flip: true
+  random_resize_aspect_ratio: [0.9, 1.1]
+  random_resize_scale: [0.8, 1.0]
+loss: {type: l1}
+optimization:
+  epochs: 25
+  lr: 0.0002
+  start_lr: 0.00002
+  final_lr: 0.00001
+  warmup: 0.05
+  weight_decay: 0.04
+  grad_clip: 1.0
+logging: {log_freq: 10, max_eval_batches: 64}

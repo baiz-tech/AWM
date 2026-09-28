@@ -1,0 +1,14 @@
+{
+  "protocol": "hasp_ek100_offline_features_v1",
+  "count": 64,
+  "features": [
+    "entity",
+    "dynamic",
+    "relation",
+    "scene",
+    "full"
+  ],
+  "source": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v23_ek100_only/seed239_parallel_v23/cache/probe_validation",
+  "readout": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v23_ek100_only/seed239_parallel_v23/readout/best.pt",
+  "adapter": "/data/shyang/outputs/ABDUCTIVE-WORLD/reproduce_v23_ek100_only/seed239_parallel_v23/adapter/best.pt"
+}
