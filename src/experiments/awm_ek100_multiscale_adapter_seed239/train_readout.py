@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 import argparse,json,os
+from contextlib import nullcontext
 from pathlib import Path
 import numpy as np,torch,torch.distributed as dist,torch.nn.functional as F,yaml
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -9,6 +10,7 @@ from src.data.ek100.labels import encode_labels
 from src.data.ek100.dataset import read_rows
 from .readout import EK100MultiScaleReadout
 from src.core.run_context import apply_cli_defaults, task_context
+from .output_guard import ensure_no_artifacts
 class GridDataset(Dataset):
  def __init__(self,path,rank=0,world=1):
   paths=sorted(Path(path).glob('features-rank*.pt'))
@@ -25,10 +27,12 @@ def setup():
  r,w,l=int(os.environ['RANK']),int(os.environ['WORLD_SIZE']),int(os.environ['LOCAL_RANK']);torch.cuda.set_device(l);dist.init_process_group('nccl');return r,w,torch.device('cuda',l)
 def run(m,dl,dev,amap,nc,weights,train=False,opt=None):
  m.train(train);s=torch.zeros(9,device=dev,dtype=torch.float64);sup=torch.zeros(nc,device=dev,dtype=torch.float64);cor=torch.zeros_like(sup)
- for x,v,n in dl:
-  x,v,n=x.to(dev),v.to(dev),n.to(dev);a=torch.tensor([amap.get((int(i),int(j)),-1) for i,j in zip(v.cpu(),n.cpu())],device=dev);vl,nl,al,consistency=m(x);ok=a>=0;weighted=F.cross_entropy(nl,n,weight=weights);noun_loss=.5*F.cross_entropy(nl,n)+.5*weighted;loss=F.cross_entropy(vl,v)+noun_loss+.2*(F.cross_entropy(al[ok],a[ok]) if ok.any() else x.sum()*0.)+.02*consistency
-  if train:opt.zero_grad(set_to_none=True);loss.backward();torch.nn.utils.clip_grad_norm_(m.parameters(),5.);opt.step()
-  tv,tn=vl.topk(5,1).indices,nl.topk(5,1).indices;b=len(v);s+=torch.tensor([loss.detach().item()*b,b,int(ok.sum()),(vl.argmax(1)==v).sum(),(tv==v[:,None]).any(1).sum(),(nl.argmax(1)==n).sum(),(tn==n[:,None]).any(1).sum(),(al[ok].argmax(1)==a[ok]).sum() if ok.any() else 0,consistency.detach().item()*b],device=dev,dtype=torch.float64);sup+=torch.bincount(n,minlength=nc);cor+=torch.bincount(n[nl.argmax(1)==n],minlength=nc)
+ forward=m.module if not train and isinstance(m,DDP) else m
+ with m.join() if train and isinstance(m,DDP) else nullcontext():
+  for x,v,n in dl:
+   x,v,n=x.to(dev),v.to(dev),n.to(dev);a=torch.tensor([amap.get((int(i),int(j)),-1) for i,j in zip(v.cpu(),n.cpu())],device=dev);vl,nl,al,consistency=forward(x);ok=a>=0;weighted=F.cross_entropy(nl,n,weight=weights);noun_loss=.5*F.cross_entropy(nl,n)+.5*weighted;loss=F.cross_entropy(vl,v)+noun_loss+.2*(F.cross_entropy(al[ok],a[ok]) if ok.any() else x.sum()*0.)+.02*consistency
+   if train:opt.zero_grad(set_to_none=True);loss.backward();torch.nn.utils.clip_grad_norm_(m.parameters(),5.);opt.step()
+   tv,tn=vl.topk(5,1).indices,nl.topk(5,1).indices;b=len(v);s+=torch.tensor([loss.detach().item()*b,b,int(ok.sum()),(vl.argmax(1)==v).sum(),(tv==v[:,None]).any(1).sum(),(nl.argmax(1)==n).sum(),(tn==n[:,None]).any(1).sum(),(al[ok].argmax(1)==a[ok]).sum() if ok.any() else 0,consistency.detach().item()*b],device=dev,dtype=torch.float64);sup+=torch.bincount(n,minlength=nc);cor+=torch.bincount(n[nl.argmax(1)==n],minlength=nc)
  if dist.is_initialized():dist.all_reduce(s);dist.all_reduce(sup);dist.all_reduce(cor)
  active=sup>0;c=max(float(s[1]),1);ac=max(float(s[2]),1);return {'loss':float(s[0]/c),'slot_consistency':float(s[8]/c),'verb_top1':float(s[3]/c),'verb_top5':float(s[4]/c),'noun_top1':float(s[5]/c),'noun_top5':float(s[6]/c),'action_top1':float(s[7]/ac),'noun_balanced_accuracy':float((cor[active]/sup[active]).mean())}
 def main():
@@ -39,6 +43,7 @@ def main():
  amap={x:i for i,x in enumerate(pairs)};counts=torch.bincount(tr.n,minlength=len(nv)).float().to(dev)
  if dist.is_initialized():dist.all_reduce(counts)
  weights=((1-.9999)/(1-.9999**counts)).clamp(max=5);weights/=weights.mean();m=EK100MultiScaleReadout(len(vv),len(nv),pairs).to(dev);m=DDP(m,device_ids=[dev.index]) if w>1 else m;tl=DataLoader(tr,64,shuffle=True);vl=DataLoader(va,64);opt=torch.optim.AdamW(m.parameters(),lr=3e-4,weight_decay=5e-4);out=Path(a.output);best=(-1.,-1.);hist=[]
+ ensure_no_artifacts(out)
  if r==0:out.mkdir(parents=True,exist_ok=True)
  if dist.is_initialized():dist.barrier()
  for e in range(1,a.epochs+1):

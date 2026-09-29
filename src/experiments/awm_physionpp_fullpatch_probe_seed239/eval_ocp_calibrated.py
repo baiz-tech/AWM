@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 from .structured_probe import PhysionStructuredProbe
 from .train_probe import Cache
 from src.core.run_context import apply_cli_defaults, task_context
+from .output_guard import ensure_no_artifacts
 
 
 @torch.no_grad()
@@ -41,7 +42,7 @@ def main():
     parser = argparse.ArgumentParser(); parser.add_argument("--checkpoint", required=True); parser.add_argument("--validation-cache", required=True); parser.add_argument("--test-cache", required=True); parser.add_argument("--output-dir", required=True); parser.add_argument("--device", default="cuda:0")
     apply_cli_defaults(parser, ctx)
     args = parser.parse_args(); output = Path(args.output_dir)
-    if output.exists(): raise FileExistsError(f"output exists: {output}")
+    ensure_no_artifacts(output)
     device = torch.device(args.device if torch.cuda.is_available() else "cpu"); payload = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
     model = PhysionStructuredProbe(**payload["model_config"]).to(device); model.load_state_dict(payload["model"], strict=True); model.eval()
     validation_prob, validation_label = predictions(model, args.validation_cache, device)
@@ -49,6 +50,6 @@ def main():
     scores = torch.tensor([metrics(validation_prob, validation_label, float(value))["balanced_accuracy"] for value in candidates])
     threshold = float(candidates[scores.argmax()]); test_prob, test_label = predictions(model, args.test_cache, device)
     result = {"protocol": "physionpp_structured_probe_ocp_calibrated_v1", "checkpoint": str(Path(args.checkpoint).resolve()), "threshold": threshold, "threshold_source": "readout_data_v1/max_validation_balanced_accuracy", "validation": {**metrics(validation_prob, validation_label, threshold), "auroc": auroc(validation_prob, validation_label), "samples": len(validation_label)}, "test": {**metrics(test_prob, test_label, threshold), "auroc": auroc(test_prob, test_label), "samples": len(test_label)} }
-    output.mkdir(parents=True); (output / "metrics.json").write_text(json.dumps(result, indent=2) + "\n"); torch.save({"probabilities": test_prob, "labels": test_label, "threshold": threshold}, output / "test_predictions.pt"); print(json.dumps(result, indent=2))
+    output.mkdir(parents=True, exist_ok=True); (output / "metrics.json").write_text(json.dumps(result, indent=2) + "\n"); torch.save({"probabilities": test_prob, "labels": test_label, "threshold": threshold}, output / "test_predictions.pt"); print(json.dumps(result, indent=2))
 
 if __name__ == "__main__": main()

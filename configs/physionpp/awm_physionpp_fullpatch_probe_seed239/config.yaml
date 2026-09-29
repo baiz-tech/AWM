@@ -28,7 +28,7 @@ launch:
     experiment: awm_physionpp_fullpatch_probe_seed239
     stage: 0
     workspace_root: outputs/runs
-    data_root: /data/shyang/outputs
+    data_root: /absolute/path/to/outputs
 
   resources:
     gpus_per_node: 8
@@ -44,8 +44,8 @@ launch:
 
   extra_config:
     paths:
-      physion_root: /data/ABDUCTIVE-WORLD/physion_v2/extracted
-      encoder_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+      physion_root: /absolute/path/to/physion_v2/extracted
+      encoder_checkpoint: /absolute/path/to/vith.pt
       encoder_checkpoint_key: target_encoder
     protocol:
       video_glob: "**/*_img.mp4"
@@ -119,7 +119,7 @@ tasks:
       meta: &physionpp_meta
         seed: 239
         dtype: bfloat16
-        pretrain_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+        pretrain_checkpoint: /absolute/path/to/vith.pt
         encoder_checkpoint_key: target_encoder
       model: &physionpp_model
         model_name: vit_huge
@@ -138,7 +138,7 @@ tasks:
         wide_silu: true
         use_activation_checkpointing: true
       data: &physionpp_data
-        root: /data/ABDUCTIVE-WORLD/physion_v2/extracted
+        root: /absolute/path/to/physion_v2/extracted
         video_glob: "**/*_img.mp4"
         crop_size: 256
         clip_frames: 16
@@ -249,7 +249,7 @@ tasks:
         --epochs: "300"
         --learning-rate: "0.01"
         --weight-decay: "0.001"
-        --seeds: "239"
+        --seeds: [239, 240, 241]
 
   eval_ocp_calibrated:
     launch:

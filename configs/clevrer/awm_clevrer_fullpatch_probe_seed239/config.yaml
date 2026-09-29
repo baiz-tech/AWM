@@ -24,7 +24,7 @@ launch:
     experiment: awm_clevrer_fullpatch_probe_seed239
     stage: 0
     workspace_root: outputs/runs
-    data_root: /data/shyang/outputs
+    data_root: /absolute/path/to/outputs
 
   resources:
     gpus_per_node: 8
@@ -40,11 +40,11 @@ launch:
 
   extra_config:
     paths:
-      clevrer_root: /data/shared/datasets/CLEVRER
-      clevrer_annotations: /data/shared/datasets/CLEVRER/official_code/executor/data
-      encoder_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
-      world_checkpoint: /data/shyang/outputs/vjepa2-baiz/vjepa2_naive/clevrer_vith_16to16_stride2_8gpu/best.pt
-      python_bin: /data/shared/envs/vjepa2-312/bin/python
+      clevrer_root: /absolute/path/to/CLEVRER
+      clevrer_annotations: /absolute/path/to/CLEVRER/official_code/executor/data
+      encoder_checkpoint: /absolute/path/to/vith.pt
+      world_checkpoint: /absolute/path/to/clevrer_world/best.pt
+      python_bin: /absolute/path/to/env/bin/python
     protocol:
       video_glob: "*.mp4"
       crop_size: 256
@@ -63,7 +63,7 @@ tasks:
       meta:
         seed: 239
         dtype: bfloat16
-        pretrain_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+        pretrain_checkpoint: /absolute/path/to/vith.pt
         encoder_checkpoint_key: target_encoder
       model:
         model_name: vit_huge
@@ -83,7 +83,7 @@ tasks:
         use_activation_checkpointing: true
       data:
         dataset: clevrer
-        root: /data/shared/datasets/CLEVRER
+        root: /absolute/path/to/CLEVRER
         train_split: train
         eval_split: validation
         video_glob: "*.mp4"
@@ -325,7 +325,7 @@ tasks:
           trajectory_length: 80
           frame_offset: 5
           predictive_window: true
-        annotation_root: /data/shared/datasets/CLEVRER/official_code/executor/data
+        annotation_root: /absolute/path/to/CLEVRER/official_code/executor/data
         question_types: [predictive]
         skip_existing_trajectories: true
         learned_tokens_per_step: 16

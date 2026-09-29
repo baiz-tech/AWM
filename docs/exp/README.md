@@ -2,10 +2,39 @@
 
 本文说明如何在当前仓库运行论文正文的三个 AWM 主实验：Physion++、CLEVRER 和 EPIC-KITCHENS-100（EK100）。命令均从仓库根目录执行：
 
+## 配置运行环境
+
+使用 Linux、Python 3.12 和支持 CUDA 的 NVIDIA GPU 环境。先安装 Miniconda 或 Anaconda，并确保 `nvidia-smi` 能正常显示 GPU。以下安装示例采用参考环境的 PyTorch 2.6.0、torchvision 0.21.0 和 CUDA 12.4 wheel；显卡驱动须支持该 CUDA 运行时。
+
+从仓库根目录创建独立环境并安装依赖：
+
 ```bash
-cd /home/shyang/workspace/work/awm_final
-conda activate vjepa2-312
+conda create -n awm python=3.12 pip -y
+conda activate awm
+python -m pip install --upgrade pip
+python -m pip install torch==2.6.0 torchvision==0.21.0 \
+  --index-url https://download.pytorch.org/whl/cu124
+python -m pip install -r requirements.txt
 ```
+
+安装完成后检查依赖和 GPU：
+
+```bash
+python -m pip check
+python - <<'PY'
+import torch
+import torchvision
+import yaml, decord, cv2, scipy, timm, numpy
+
+print("PyTorch:", torch.__version__)
+print("torchvision:", torchvision.__version__)
+print("CUDA runtime:", torch.version.cuda)
+print("GPU count:", torch.cuda.device_count())
+assert torch.cuda.is_available(), "CUDA 不可用，请检查 NVIDIA 驱动和 PyTorch 安装"
+PY
+```
+
+每次运行实验前执行 `conda activate awm`，使 `python` 和 `torchrun` 使用同一环境。仓库默认配置按单机 8 卡运行；单卡检查需要同步修改 GPU 数和可见设备。若配置中的 `python_bin` 使用了开发机器的绝对路径，应替换为当前环境的解释器路径（`command -v python`）。`requirements.txt` 中多数依赖使用版本下限，以上步骤并未锁定全部依赖版本；运行前仍需完成 dry-run 和短程检查。
 
 仓库不包含数据集和大模型权重。用户需要自行准备数据、V-JEPA 2 ViT-H encoder，以及 CLEVRER 所需的预测器 checkpoint。配置文件中的默认绝对路径只代表开发环境，发布运行前必须替换为本机路径。
 
@@ -55,6 +84,59 @@ ss -ltn
 | EK100 | EPIC-KITCHENS-100 视频和官方 train/validation CSV | 通用 V-JEPA 2 ViT-H checkpoint，默认 key 为 `target_encoder` |
 
 模型结构必须与配置中的 ViT-H 参数和 checkpoint key 兼容。仓库不会自动下载、转换或修复不兼容的 checkpoint。
+
+## 数据集、模型和输出路径在哪里指定
+
+三条主实验的默认配置分别位于：
+
+```text
+configs/physionpp/awm_physionpp_fullpatch_probe_seed239/config.yaml
+configs/clevrer/awm_clevrer_fullpatch_probe_seed239/config.yaml
+configs/ek100/awm_ek100_multiscale_adapter_seed239/config.yaml
+```
+
+建议复制配置到 `temp/` 或用户自己的配置目录后修改，不要直接修改仓库中的默认配置。路径字段的位置如下：
+
+| 实验 | 数据集路径 | 模型路径 | 其他必须配置的路径 |
+|---|---|---|---|
+| Physion++ | `launch.extra_config.paths.physion_root` | `launch.extra_config.paths.encoder_checkpoint` | `launch.run.experiment`；各 task 中的 `data.root` 和 `meta.pretrain_checkpoint` |
+| CLEVRER | `launch.extra_config.paths.clevrer_root` | `encoder_checkpoint` 和 `world_checkpoint` | `launch.extra_config.paths.clevrer_annotations`；`tasks.train.experiment.data.root` 和 `meta.pretrain_checkpoint` |
+| EK100 | `launch.extra_config.paths.ek100_root`、`train_annotations`、`validation_annotations` | `launch.extra_config.paths.encoder_checkpoint` | `launch.run.experiment`；cache/readout/adapter task 中的 `data` 和 `weights` |
+
+其中：
+
+- `encoder_checkpoint` 是通用 V-JEPA 2 ViT-H encoder，通常使用 `target_encoder`，由 `encoder_checkpoint_key` 指定 key。
+- CLEVRER 的 `world_checkpoint` 是已经训练好的 CLEVRER latent predictor，不能用通用 encoder checkpoint 替代。
+- `physion_root`、`clevrer_root` 和 `ek100_root` 应指向数据集根目录，而不是某一个具体视频文件。
+- EK100 的 `train_annotations` 和 `validation_annotations` 应指向官方 CSV 文件。
+- 输出位置由 `launch.run.workspace_root`、`launch.run.data_root` 和 `launch.outputs` 指定；通常只需要通过 `--output-mode workspace|data|both` 选择输出模式。
+
+例如，使用 `temp/physionpp-test.yaml` 时，修改以下字段：
+
+```yaml
+launch:
+  run:
+    experiment: physionpp_test_20260928
+  extra_config:
+    paths:
+      physion_root: /absolute/path/to/physion_v2/extracted
+      encoder_checkpoint: /absolute/path/to/vith.pt
+      encoder_checkpoint_key: target_encoder
+```
+
+Physion++ 配置中同一条路径会在 predictor、cache 和 probe 的 task 配置中重复出现。修改后请搜索配置确认没有残留旧路径：
+
+```bash
+rg -n '/data/|physion_root|encoder_checkpoint|data.root|pretrain_checkpoint' temp/physionpp-test.yaml
+```
+
+运行时通过 `CONFIG` 选择该配置：
+
+```bash
+CONFIG="$PWD/temp/physionpp-test.yaml" \
+  bash scripts/physionpp/awm_physionpp_fullpatch_probe_seed239/train_predictor.sh \
+  --output-mode workspace --dry-run
+```
 
 ## 配置自己的路径
 

@@ -21,7 +21,7 @@ launch:
     experiment: awm_ek100_multiscale_adapter_seed239
     stage: 0
     workspace_root: outputs/runs
-    data_root: /data/shyang/outputs
+    data_root: /absolute/path/to/outputs
 
   resources:
     gpus_per_node: 8
@@ -37,10 +37,10 @@ launch:
 
   extra_config:
     paths:
-      ek100_root: /data/shared/datasets/EPIC-KITCHENS-processed_v1
-      train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
-      validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
-      encoder_checkpoint: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+      ek100_root: /absolute/path/to/EPIC-KITCHENS-processed_v1
+      train_annotations: /absolute/path/to/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+      validation_annotations: /absolute/path/to/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+      encoder_checkpoint: /absolute/path/to/vith.pt
     protocol:
       crop_size: 256
       clip_frames: 16
@@ -110,14 +110,14 @@ tasks:
         --grid-size: "{cfg:launch.extra_config.protocol.cache_grid_size}"
         --batch-size: "4"
       data: &ek100_data
-        video_root: /data/shared/datasets/EPIC-KITCHENS-processed_v1
-        train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
-        validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+        video_root: /absolute/path/to/EPIC-KITCHENS-processed_v1
+        train_annotations: /absolute/path/to/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+        validation_annotations: /absolute/path/to/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
         crop_size: 256
         clip_frames: 16
         num_workers: 4
       weights: &ek100_weights
-        encoder: /data/ABDUCTIVE-WORLD/pretrain/checkpoints/vith.pt
+        encoder: /absolute/path/to/vith.pt
         encoder_key: target_encoder
         native_predictor: null
         predictor_init: random
@@ -213,8 +213,8 @@ tasks:
         --seed: "{seed}"
         --epochs: "30"
       data:
-        train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
-        validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+        train_annotations: /absolute/path/to/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+        validation_annotations: /absolute/path/to/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
       training:
         readout_batch_size: 256
         readout_learning_rate: 0.001
@@ -244,8 +244,8 @@ tasks:
         --seed: "{seed}"
         --epochs: "12"
       data:
-        train_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
-        validation_annotations: /data/shared/datasets/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
+        train_annotations: /absolute/path/to/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_train.csv
+        validation_annotations: /absolute/path/to/EPIC-KITCHENS-processed_v1/annotations/EPIC_100_validation.csv
       training:
         adapter_batch_size: 8
         adapter_learning_rate: 0.0001
