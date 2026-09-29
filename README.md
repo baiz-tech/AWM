@@ -24,7 +24,7 @@ The central principle is **predict forward, then abduce backward**:
 
 The hierarchy preserves lower-level information while adding higher-order structure. This makes the representation inspectable and enables targeted interventions on entity, dynamic, and relation evidence.
 
-![AWM overview](docs/figures/awm_architecture.pdf)
+> **Main architecture figure:** [HASP overview (PDF)](docs/figures/awm_architecture.pdf)
 
 ## Reported tasks
 
