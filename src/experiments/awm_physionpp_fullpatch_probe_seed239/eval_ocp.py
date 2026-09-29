@@ -12,6 +12,7 @@ from .structured_probe import PhysionStructuredProbe
 from .train_probe import Cache
 from .eval_ocp_calibrated import auroc, metrics
 from src.core.run_context import apply_cli_defaults, task_context
+from .output_guard import ensure_no_artifacts
 
 
 def split(labels, fraction, seed):
@@ -50,8 +51,10 @@ def main():
     ctx = task_context()
     parser = argparse.ArgumentParser(); parser.add_argument("--checkpoint", required=True); parser.add_argument("--readout-cache", required=True); parser.add_argument("--test-cache", required=True); parser.add_argument("--output-dir", required=True); parser.add_argument("--seeds", type=int, nargs="+", default=(239, 240, 241)); parser.add_argument("--epochs", type=int, default=300); parser.add_argument("--learning-rate", type=float, default=1e-2); parser.add_argument("--weight-decay", type=float, default=1e-3); parser.add_argument("--device", default="cuda:0")
     apply_cli_defaults(parser, ctx)
-    args = parser.parse_args(); output = Path(args.output_dir)
-    if output.exists(): raise FileExistsError(f"output exists: {output}")
+    args = parser.parse_args(); args.seeds = [args.seeds] if isinstance(args.seeds, int) else args.seeds; output = Path(args.output_dir)
+    # The launcher creates this directory and writes bookkeeping before the
+    # module starts; only reject actual evaluation artifacts.
+    ensure_no_artifacts(output)
     device = torch.device(args.device if torch.cuda.is_available() else "cpu"); payload = torch.load(args.checkpoint, map_location="cpu", weights_only=False); model = PhysionStructuredProbe(**payload["model_config"]).to(device); model.load_state_dict(payload["model"], strict=True); model.eval()
     readout_x, readout_y = extract(model, args.readout_cache, device)
     test_x, test_y = extract(model, args.test_cache, device); runs, predictions = {}, {}
@@ -59,5 +62,5 @@ def main():
         train, validation = split(readout_y, .2, seed); threshold, result, prediction = fit(readout_x[train], readout_y[train], readout_x[validation], readout_y[validation], test_x, test_y, seed, args.epochs, args.learning_rate, args.weight_decay, device); runs[str(seed)] = {"threshold": threshold, **result}; predictions[f"seed{seed}"] = prediction
     names = tuple(next(iter(runs.values())).keys() - {"threshold"}); aggregate = {name: {"mean": float(np.mean([runs[str(seed)][name] for seed in args.seeds])), "std": float(np.std([runs[str(seed)][name] for seed in args.seeds])), "values": [runs[str(seed)][name] for seed in args.seeds]} for name in names}
     result = {"protocol": "physionpp_structured_probe_v12_frozen_readout_v1", "checkpoint": str(Path(args.checkpoint).resolve()), "feature_definition": "all object/pair tokens and explicit physical outputs; no global pooling", "feature_dim": int(readout_x.size(1)), "num_readout": len(readout_y), "num_test": len(test_y), "seeds": args.seeds, "per_seed": runs, "aggregate": aggregate}
-    output.mkdir(parents=True); (output / "metrics.json").write_text(json.dumps(result, indent=2) + "\n"); torch.save({"labels": test_y, **predictions}, output / "test_predictions.pt"); print(json.dumps(result, indent=2))
+    output.mkdir(parents=True, exist_ok=True); (output / "metrics.json").write_text(json.dumps(result, indent=2) + "\n"); torch.save({"labels": test_y, **predictions}, output / "test_predictions.pt"); print(json.dumps(result, indent=2))
 if __name__ == "__main__": main()
