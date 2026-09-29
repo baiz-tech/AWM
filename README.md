@@ -4,13 +4,6 @@ Official implementation and experiment suite for **Abductive World Modeling via 
 
 AWM turns a predictive future into structured evidence about the present. Given an observed video context, a frozen V-JEPA 2 backbone first predicts a future latent state. AWM then reasons jointly over the current and predicted representations and infers a structured state that explains how the scene evolves.
 
-## Paper and resources
-
-- **Paper:** [Abductive World Modeling via Causal Representation Learning](docs/paper/awm_paper.pdf)
-- **Main figure:** [HASP architecture](docs/figures/awm_architecture.pdf)
-- **Code:** this repository
-
-The paper studies physical prediction, event reasoning, and action understanding. The released code contains the corresponding training, evaluation, intervention, and paper-figure pipelines.
 
 ## Method
 
@@ -26,7 +19,7 @@ The hierarchy preserves lower-level information while adding higher-order struct
 
 ![AWM overview](docs/figures/awm_architecture.png)
 
-[Open the architecture figure as a PDF](docs/figures/awm_architecture.pdf)
+
 
 ## Reported tasks
 
