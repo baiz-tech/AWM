@@ -54,7 +54,7 @@ python -m pip install torch==2.6.0 torchvision==0.21.0 \
 python -m pip install -r requirements.txt
 ```
 
-The repository does not redistribute datasets, V-JEPA 2 weights, or CLEVRER predictor checkpoints. Configure their local paths in a private copy of the relevant YAML configuration. Start with the full reproduction guide:
+The repository does not redistribute datasets, V-JEPA 2 weights, or CLEVRER predictor checkpoints. Published paths and hostnames are examples. Configure local paths in an ignored `*.local.yaml` copy of the relevant YAML configuration, and keep real node addresses, SSH usernames, and credentials out of tracked files. Historical multi-node examples use reserved documentation addresses (`192.0.2.0/24`) and require local configuration before use. Start with the full reproduction guide:
 
 ```bash
 less docs/exp/README.md

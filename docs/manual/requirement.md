@@ -8,7 +8,7 @@
 |---|---|
 | `requirement.md` | 定义必须遵守的开发与运行规范 |
 | `example_config.yaml` | 提供标准 config 结构和字段示例 |
-| `resource.md` | 记录当前机器、路径、节点、网卡、环境等真实资源信息 |
+| `resource.md` | 记录公开的参考环境和脱敏资源示例；真实配置保存在被忽略的本地文件中 |
 
 > 机器专用路径、IP、网卡、端口等不得硬编码到通用源码中。
 
@@ -212,7 +212,7 @@ NPROC_PER_NODE
 CUDA_VISIBLE_DEVICES
 ```
 
-节点专用网卡、环境和路径由 `resource.md` / 环境变量提供。
+节点专用网卡、环境和路径由被 Git 忽略的 `*.local.yaml` 配置或本地环境变量提供。
 
 ---
 

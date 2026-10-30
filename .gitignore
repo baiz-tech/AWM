@@ -43,6 +43,10 @@ checkpoints/
 
 # ---- local environment -------------------------------------------------------
 .env
+.env.*
+!.env.example
+*.local.yaml
+*.local.yml
 .venv/
 venv/
 *.swp
